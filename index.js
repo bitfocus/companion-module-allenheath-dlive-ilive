@@ -122,8 +122,8 @@ instance.prototype.actions = function (system) {
 				type: 'dropdown',
 				label: 'Mute',
 				id: 'mute',
-				default: true,
-				choices: [{ label: 'mute on', id: true }, { label: 'mute off', id: false }]
+				default: 'mute_on',
+				choices: [{ label: 'mute on', id: 'mute_on' }, { label: 'mute off', id: 'mute_off' }]
 			}]
 		}
 	};
@@ -141,7 +141,7 @@ instance.prototype.action = function (action) {
 
 		case 'mute_input':
 			mute = '';
-			if (opt.mute) {
+			if (opt.mute == 'mute_on') {
 				mute = '\x7F';
 			} else {
 				mute = '\x3F';
