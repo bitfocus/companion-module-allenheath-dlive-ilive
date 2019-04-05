@@ -88,22 +88,22 @@ instance.prototype.destroy = function () {
 };
 
 instance.prototype.CHOICES_INPUT_CHANNEL = [
-	{ label: '1', id: '\x00' },
-	{ label: '2', id: '\x01' },
-	{ label: '3', id: '\x02' },
-	{ label: '4', id: '\x03' },
-	{ label: '5', id: '\x04' },
-	{ label: '6', id: '\x05' },
-	{ label: '7', id: '\x06' },
-	{ label: '8', id: '\x07' },
-	{ label: '9', id: '\x08' },
-	{ label: '10', id: '\x09' },
-	{ label: '11', id: '\x0A' },
-	{ label: '12', id: '\x0B' },
-	{ label: '13', id: '\x0C' },
-	{ label: '14', id: '\x0D' },
-	{ label: '15', id: '\x0E' },
-	{ label: '16', id: '\x0F' }
+	{ label: '1', id: '1' },
+	{ label: '2', id: '2' },
+	{ label: '3', id: '3' },
+	{ label: '4', id: '4' },
+	{ label: '5', id: '5' },
+	{ label: '6', id: '6' },
+	{ label: '7', id: '7' },
+	{ label: '8', id: '8' },
+	{ label: '9', id: '9' },
+	{ label: '10', id: '10' },
+	{ label: '11', id: '11' },
+	{ label: '12', id: '12' },
+	{ label: '13', id: '13' },
+	{ label: '14', id: '14' },
+	{ label: '15', id: '15' },
+	{ label: '16', id: '16' }
 ];
 
 instance.prototype.actions = function (system) {
@@ -116,14 +116,14 @@ instance.prototype.actions = function (system) {
 				type: 'dropdown',
 				label: 'Input channel',
 				id: 'inputChannel',
-				default: '\x02',
+				default: '1',
 				choices: self.CHOICES_INPUT_CHANNEL
 			},{
 				type: 'dropdown',
 				label: 'Mute',
 				id: 'mute',
-				default: '\x7F',
-				choices: [{ label: 'mute on', id: '\x7F' }, { label: 'mute off', id: '\x3F' }]
+				default: true,
+				choices: [{ label: 'mute on', id: true }, { label: 'mute off', id: false }]
 			}]
 		}
 	};
@@ -140,7 +140,16 @@ instance.prototype.action = function (action) {
 	switch (id) {
 
 		case 'mute_input':
-			cmd = `9N, ${opt.inputChannel}, ${opt.mute}, 9N, ${opt.inputChannel}, 00\r`;
+			mute = '';
+			if (opt.mute) {
+				mute = '\x7F';
+			} else {
+				mute = '\x3F';
+			}
+			int channel = Integer.parseInt(opt.inputChannel);
+			String hex = Integer.toHexString(channel);
+
+			cmd = '9N, '+hex+', '+mute+' , 9N, '+hex+', 00\r';
 			console.log(cmd);
 			break
 
