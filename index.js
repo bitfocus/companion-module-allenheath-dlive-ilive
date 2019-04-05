@@ -146,8 +146,8 @@ instance.prototype.action = function (action) {
 			} else {
 				mute = '\x3F';
 			}
-			int channel = Integer.parseInt(opt.inputChannel);
-			String hex = Integer.toHexString(channel);
+			var channel = Integer.parseInt(opt.inputChannel);
+			var hex = Integer.toHexString(channel);
 
 			cmd = '9N, '+hex+', '+mute+' , 9N, '+hex+', 00\r';
 			console.log(cmd);
