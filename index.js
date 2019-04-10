@@ -103,7 +103,11 @@ instance.prototype.CHOICES_INPUT_CHANNEL = [
 	{ label: '13', id: '13' },
 	{ label: '14', id: '14' },
 	{ label: '15', id: '15' },
-	{ label: '16', id: '16' }
+	{ label: '16', id: '16' },
+	{ label: '17', id: '17' },
+	{ label: '18', id: '18' },
+	{ label: '19', id: '19' },
+	{ label: '20', id: '20' }
 ];
 
 instance.prototype.actions = function (system) {
@@ -140,19 +144,16 @@ instance.prototype.action = function (action) {
 	switch (id) {
 
 		case 'mute_input':
-			mute = '';
-			if (opt.mute == 'mute_on') {
-				mute = '\x7F';
-			} else {
-				mute = '\x3F';
-			}
 			var channel = Integer.parseInt(opt.inputChannel);
-			var hex = Integer.toHexString(channel);
 
-			cmd = '\x90, '+hex+', '+mute+' , \x90, '+hex+', \x00';
+			if (opt.mute == 'mute_on') {
+				cmd = new Buffer([ 0x90 + 0, channel, 0x7f, 0x90 + 0, channel, 0x00 ]);
+			} else {
+				cmd = new Buffer([ 0x90 + 0, channel, 0x3f, 0x90 + 0, channel, 0x00 ]);
+			}
+
 			console.log(cmd);
-			break
-
+			break;
 	}
 
 	if (cmd !== undefined) {
