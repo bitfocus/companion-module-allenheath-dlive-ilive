@@ -149,7 +149,7 @@ instance.prototype.action = function (action) {
 			var channel = Integer.parseInt(opt.inputChannel);
 			var hex = Integer.toHexString(channel);
 
-			cmd = '9N, '+hex+', '+mute+' , 9N, '+hex+', 00\r';
+			cmd = '\x90, '+hex+', '+mute+' , \x90, '+hex+', \x00';
 			console.log(cmd);
 			break
 
