@@ -55,9 +55,7 @@ class instance extends instance_skel {
 		];
 
 		Object.assign(this, {
-			...actions,
-			...feedback,
-			...instance_api
+			...actions
 		});
 
 		this.actions(); // export actions
@@ -72,7 +70,6 @@ class instance extends instance_skel {
 	 */
 	actions(system) {
 
-		this.setupChoices();
 		this.setActions(this.getActions());
 	}
 
@@ -103,9 +100,9 @@ class instance extends instance_skel {
 		}
 
 		if (cmd !== undefined) {
-			if (self.tcp !== undefined) {
-				debug('sending ', cmd, "to", self.tcp.host);
-				self.tcp.send(cmd);
+			if (self.socket !== undefined) {
+				debug('sending ', cmd, "to", this.config.host);
+				self.socket.write(cmd);
 			}
 		}
 	}
@@ -171,9 +168,6 @@ class instance extends instance_skel {
 		debug = this.debug;
 		log = this.log;
 
-		this.initFeedbacks();
-		this.checkFeedbacks('encoder_started');
-
 		this.init_tcp();
 	}
 
@@ -209,7 +203,6 @@ class instance extends instance_skel {
 
 			this.socket.on('connect', () => {
 				this.debug("Connected");
-				this.sendGetEncodersCommand();
 			});
 
 			// separate buffered stream into lines with responses
@@ -227,89 +220,9 @@ class instance extends instance_skel {
 			});
 
 			this.socket.on('receiveline', (line) => {
-				if (line.startsWith('Encoder')) {
-					//List of encoders
-					var encoderName = line.slice(0,10).trim();
-					this.processInformation('addEncoder', encoderName)
-				}
-
-				else if (line.match(/stopped/gi) && line.match(/OK: OK:/gi)) {
-					//stopped an encoder
-					var encoderName = line.slice(line.indexOf('Encoder') + 9,line.indexOf('has') - 2);
-					console.log('stopped: '+ encoderName);
-					this.processInformation('stopped', encoderName);
-				}
-
-				else if (line.match(/started/gi) && line.match(/OK: OK:/gi)) {
-					//started an encoder
-					var encoderName = line.slice(line.indexOf('Encoder') + 9,line.indexOf('has') - 2);
-					console.log('started: '+ encoderName);
-					this.processInformation('started', encoderName);
-				}
-
-				else {
-					this.debug("weird response from ingest", line, line.length);
-				}
+				console.log('response: ' +line);
 			});
 		}
-	}
-
-	/**
-	 * INTERNAL: initialize feedbacks.
-	 *
-	 * @access protected
-	 * @since 1.1.0
-	 */
-	initFeedbacks() {
-		// feedbacks
-		var feedbacks = this.getFeedbacks();
-
-		this.setFeedbackDefinitions(feedbacks);
-	}
-
-	/**
-	 * INTERNAL: Routes incoming data to the appropriate function for processing.
-	 *
-	 * @param {string} key - the command/data type being passed
-	 * @param {Object} data - the collected data
-	 * @access protected
-	 * @since 1.0.0
-	 */
-	processInformation(key,data) {
-		if (key === 'addEncoder') {
-			this.encoders.push(data);
-			console.log(this.encoders);
-			this.setupChoices();
-		} else if (key === 'started') {
-			this.activeEncoders.push(parseInt(data.slice(8).trim()));
-			console.log('ENCODERS: '+ this.activeEncoders);
-			this.checkFeedbacks('encoder_started');
-		}
-		else if (key === 'stopped') {
-			//this.activeEncoder = parseInt(data.slice(8).trim());
-			this.activeEncoders.splice(this.activeEncoders.indexOf(parseInt(data.slice(8).trim())), 1);
-			console.log('ENCODERS: '+ this.activeEncoders);
-			this.checkFeedbacks('encoder_started');
-		} else {
-			// TODO: find out more
-		}
-	}
-
-	/**
-	 * INTERNAL: use model data to define the choices for the dropdowns.
-	 *
-	 * @access protected
-	 * @since 1.1.0
-	 */
-	setupChoices() {
-
-		this.CHOICES_LIST = [];
-
-		for(var key = 0; key < this.encoders.length; key++) {
-			this.CHOICES_LIST.push( { id: key.toString() + 1, label: this.encoders[key].toString() } );
-		}
-		console.log('yo '+this.CHOICES_LIST);
-
 	}
 
 	/**
@@ -330,8 +243,6 @@ class instance extends instance_skel {
 		this.config = config;
 
 		this.actions();
-		this.initFeedbacks();
-		this.encoders = [];
 
 		if (resetConnection === true || this.socket === undefined) {
 			this.init_tcp();
