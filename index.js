@@ -32,26 +32,26 @@ class instance extends instance_skel {
 		this.encoders     = [];
 		this.CHOICES_LIST = [];
 		this.CHOICES_INPUT_CHANNEL = [
-			{ label: '1', id: '1' },
-			{ label: '2', id: '2' },
-			{ label: '3', id: '3' },
-			{ label: '4', id: '4' },
-			{ label: '5', id: '5' },
-			{ label: '6', id: '6' },
-			{ label: '7', id: '7' },
-			{ label: '8', id: '8' },
-			{ label: '9', id: '9' },
-			{ label: '10', id: '10' },
-			{ label: '11', id: '11' },
-			{ label: '12', id: '12' },
-			{ label: '13', id: '13' },
-			{ label: '14', id: '14' },
-			{ label: '15', id: '15' },
-			{ label: '16', id: '16' },
-			{ label: '17', id: '17' },
-			{ label: '18', id: '18' },
-			{ label: '19', id: '19' },
-			{ label: '20', id: '20' }
+			{ label: '1', id: '0' },
+			{ label: '2', id: '1' },
+			{ label: '3', id: '2' },
+			{ label: '4', id: '3' },
+			{ label: '5', id: '4' },
+			{ label: '6', id: '5' },
+			{ label: '7', id: '6' },
+			{ label: '8', id: '7' },
+			{ label: '9', id: '8' },
+			{ label: '10', id: '9' },
+			{ label: '11', id: '10' },
+			{ label: '12', id: '11' },
+			{ label: '13', id: '12' },
+			{ label: '14', id: '13' },
+			{ label: '15', id: '14' },
+			{ label: '16', id: '15' },
+			{ label: '17', id: '16' },
+			{ label: '18', id: '17' },
+			{ label: '19', id: '18' },
+			{ label: '20', id: '19' }
 		];
 
 		Object.assign(this, {
