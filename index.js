@@ -31,28 +31,22 @@ class instance extends instance_skel {
 		this.activeEncoders = [];
 		this.encoders     = [];
 		this.CHOICES_LIST = [];
-		this.CHOICES_INPUT_CHANNEL = [
-			{ label: '1', id: '0' },
-			{ label: '2', id: '1' },
-			{ label: '3', id: '2' },
-			{ label: '4', id: '3' },
-			{ label: '5', id: '4' },
-			{ label: '6', id: '5' },
-			{ label: '7', id: '6' },
-			{ label: '8', id: '7' },
-			{ label: '9', id: '8' },
-			{ label: '10', id: '9' },
-			{ label: '11', id: '10' },
-			{ label: '12', id: '11' },
-			{ label: '13', id: '12' },
-			{ label: '14', id: '13' },
-			{ label: '15', id: '14' },
-			{ label: '16', id: '15' },
-			{ label: '17', id: '16' },
-			{ label: '18', id: '17' },
-			{ label: '19', id: '18' },
-			{ label: '20', id: '19' }
-		];
+		this.CHOICES_INPUT_CHANNEL = [];
+		for (var i = 1; i < 129; i++) {
+			this.CHOICES_INPUT_CHANNEL.push({ label: i, id: i-1 });
+		}
+		this.CHOICES_DCA_ON_CHANNEL = [];
+		var j = 0x40;
+		for (var i = 1; i < 25; i++) {
+			this.CHOICES_DCA_ON_CHANNEL.push({ label: i, id: j });
+			j++;
+		}
+		this.CHOICES_DCA_OFF_CHANNEL = [];
+		var j = 0x00;
+		for (var i = 1; i < 25; i++) {
+			this.CHOICES_DCA_OFF_CHANNEL.push({ label: i, id: j });
+			j++;
+		}
 
 		Object.assign(this, {
 			...actions
@@ -84,12 +78,14 @@ class instance extends instance_skel {
 		var self = this;
 		var id = action.action;
 		var opt = action.options;
+		var channel = parseInt(opt.inputChannel);
+
 		var cmd;
 
 		switch (id) {
 
 			case 'mute_input':
-				var channel = parseInt(opt.inputChannel);
+
 
 				if (opt.mute == 'mute_on') {
 					cmd = new Buffer([ 0x90 + 0, channel, 0x7f, 0x90 + 0, channel, 0x00 ]);
@@ -97,11 +93,25 @@ class instance extends instance_skel {
 					cmd = new Buffer([ 0x90 + 0, channel, 0x3f, 0x90 + 0, channel, 0x00 ]);
 				}
 				break;
+/*
+			case 'channel_select':
+				console.log(channel);
+				cmd = new Buffer([ 0x00, channel ]);
+				break;
+*/
+			case 'dca_assignment_on':
+				cmd = new Buffer([ 0xB0 + 0, 0x63, channel, 0xB0 + 0, 0x62, 0x40, 0xB0 + 0, 0x06, opt.dcaChannel ]);
+				break;
+
+			case 'dca_assignment_off':
+				cmd = new Buffer([ 0xB0 + 0, 0x63, channel, 0xB0 + 0, 0x62, 0x40, 0xB0 + 0, 0x06, opt.dcaChannel ]);
+				break;
 		}
 
 		if (cmd !== undefined) {
 			if (self.socket !== undefined) {
 				debug('sending ', cmd, "to", this.config.host);
+				console.log("command: " + cmd);
 				self.socket.write(cmd);
 			}
 		}
