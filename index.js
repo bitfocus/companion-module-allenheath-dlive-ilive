@@ -32,21 +32,48 @@ class instance extends instance_skel {
 		this.encoders     = [];
 		this.CHOICES_LIST = [];
 		this.CHOICES_INPUT_CHANNEL = [];
+		this.CHOICES_INPUT_CHANNEL_256 = [];
+		this.CHOICES_INPUT_CHANNEL_384 = [];
+		this.CHOICES_INPUT_CHANNEL_500 = [];
+
 		for (var i = 1; i < 129; i++) {
 			this.CHOICES_INPUT_CHANNEL.push({ label: i, id: i-1 });
 		}
+		for (var i = 129; i < 257; i++) {
+			this.CHOICES_INPUT_CHANNEL_256.push({ label: i, id: i-1 });
+		}
+		for (var i = 257; i < 385; i++) {
+			this.CHOICES_INPUT_CHANNEL_384.push({ label: i, id: i-1 });
+		}
+		for (var i = 385; i < 501; i++) {
+			this.CHOICES_INPUT_CHANNEL_500.push({ label: i, id: i-1 });
+		}
+
+
 		this.CHOICES_DCA_ON_CHANNEL = [];
 		var j = 0x40;
 		for (var i = 1; i < 25; i++) {
 			this.CHOICES_DCA_ON_CHANNEL.push({ label: i, id: j });
 			j++;
 		}
+
 		this.CHOICES_DCA_OFF_CHANNEL = [];
 		var j = 0x00;
 		for (var i = 1; i < 25; i++) {
 			this.CHOICES_DCA_OFF_CHANNEL.push({ label: i, id: j });
 			j++;
 		}
+
+		this.CHOICES_COLOR = [
+			{ label: 'off', id: 0x00 },
+			{ label: 'Red', id: 0x01 },
+			{ label: 'Green', id: 0x02 },
+			{ label: 'Yellow', id: 0x03 },
+			{ label: 'Blue', id: 0x04 },
+			{ label: 'Purple', id: 0x05 },
+			{ label: 'Lt Blue', id: 0x06 },
+			{ label: 'White', id: 0x07 }
+		];
 
 		Object.assign(this, {
 			...actions
@@ -79,32 +106,72 @@ class instance extends instance_skel {
 		var id = action.action;
 		var opt = action.options;
 		var channel = parseInt(opt.inputChannel);
-
+		var sceneNumber = parseInt(opt.sceneNumber);
+		var sysExHeader = new Buffer([ 0xF0, 0x00, 0x00, 0x1A, 0x50, 0x10, 0x01, 0x00]);
 		var cmd;
+
+		function ascii_to_hexa(str) {
+			var arr1 = [];
+			for (var n = 0, l = str.length; n < l; n ++) {
+				var hex = Number(str.charCodeAt(n)).toString(16);
+				arr1.push(hex);
+			}
+			return arr1.join('');
+		}
 
 		switch (id) {
 
 			case 'mute_input':
-
-
 				if (opt.mute == 'mute_on') {
 					cmd = new Buffer([ 0x90 + 0, channel, 0x7f, 0x90 + 0, channel, 0x00 ]);
 				} else {
 					cmd = new Buffer([ 0x90 + 0, channel, 0x3f, 0x90 + 0, channel, 0x00 ]);
 				}
 				break;
-/*
-			case 'channel_select':
-				console.log(channel);
-				cmd = new Buffer([ 0x00, channel ]);
+
+			case 'main_assignment':
+				if (opt.main_mix == 'on') {
+					cmd = new Buffer([ 0xB0 + 0, 0x63, channel, 0xB0 + 0, 0x62, 0x18, 0xB0 + 0, 0x06, 0x7F ]);
+				} else {
+						cmd = new Buffer([ 0xB0 + 0, 0x63, channel, 0xB0 + 0, 0x62, 0x18, 0xB0 + 0, 0x06, 0x3F ]);
+				}
 				break;
-*/
+
 			case 'dca_assignment_on':
 				cmd = new Buffer([ 0xB0 + 0, 0x63, channel, 0xB0 + 0, 0x62, 0x40, 0xB0 + 0, 0x06, opt.dcaChannel ]);
 				break;
 
 			case 'dca_assignment_off':
 				cmd = new Buffer([ 0xB0 + 0, 0x63, channel, 0xB0 + 0, 0x62, 0x40, 0xB0 + 0, 0x06, opt.dcaChannel ]);
+				break;
+
+			case 'channel_name':
+				var syntax = new Buffer([0x00, 0x03, channel]);
+				var name = new Buffer.from(new String(opt.chName));
+				var end = new Buffer(([0xF7]));
+				cmd = Buffer.concat([sysExHeader, syntax, name, end]);
+				break;
+
+			case 'channel_color':
+				var syntax = new Buffer([0x00, 0x06]);
+				var color = new Buffer(([channel, opt.channelColor, 0xF7]));
+				cmd = Buffer.concat([sysExHeader, syntax, color]);
+				break;
+
+			case 'scene_recall_128':
+				cmd = new Buffer([ 0xB0, 0x00, 0x00, 0xC0, sceneNumber ]);
+				break;
+
+			case 'scene_recall_256':
+				cmd = new Buffer([ 0xB0, 0x00, 0x01, 0xC0, sceneNumber ]);
+				break;
+
+			case 'scene_recall_384':
+				cmd = new Buffer([ 0xB0, 0x00, 0x02, 0xC0, sceneNumber ]);
+				break;
+
+			case 'scene_recall_500':
+				cmd = new Buffer([ 0xB0, 0x00, 0x03, 0xC0, sceneNumber ]);
 				break;
 		}
 
