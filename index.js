@@ -178,7 +178,6 @@ class instance extends instance_skel {
 		if (cmd !== undefined) {
 			if (self.socket !== undefined) {
 				debug('sending ', cmd, "to", this.config.host);
-				console.log("command: " + cmd);
 				self.socket.write(cmd);
 			}
 		}
@@ -297,7 +296,7 @@ class instance extends instance_skel {
 			});
 
 			this.socket.on('receiveline', (line) => {
-				console.log('response: ' +line);
+				//console.log('response: ' +line);
 			});
 		}
 	}
