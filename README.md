@@ -1,4 +1,4 @@
-# companion-module-allenheath-dlive-plus
+# companion-module-allenheath-dlive
 
 This module for the Allen & Heath dLive can control parameters of the console via MIDI or TCP commands
 
