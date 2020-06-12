@@ -1,16 +1,19 @@
+/**
+ * 
+ * Companion instance class for the A&H dLive.
+ * @version 1.1.0
+ * 
+ */
+
 var tcp           = require('../../tcp');
 var instance_skel = require('../../instance_skel');
 var actions       = require('./actions');
-
-var debug;
-var log;
+var upgrade       = require('./upgrade');
 
 /**
- * Companion instance class for the Metus Ingets software.
- *
  * @extends instance_skel
- * @since 1.1.0
- * @author Jeffrey Davidsz <jeffrey.davidsz@vicreo.eu>
+ * @since 1.0.0
+ * @author Andrew Broughton <andy@checkcheckonetwo.com>
  */
 
 class instance extends instance_skel {
@@ -21,65 +24,16 @@ class instance extends instance_skel {
 	* @param {EventEmitter} system - the brains of the operation
 	* @param {string} id - the instance ID
 	* @param {Object} config - saved user configuration parameters
-	* @since 1.1.0
+	* @since 1.0.0
 	*/
 	constructor(system, id, config) {
 		super(system, id, config);
 
-		this.stash        = [];
-		this.command      = null;
-		this.activeEncoders = [];
-		this.encoders     = [];
-		this.CHOICES_LIST = [];
-		this.CHOICES_INPUT_CHANNEL = [];
-		this.CHOICES_INPUT_CHANNEL_256 = [];
-		this.CHOICES_INPUT_CHANNEL_384 = [];
-		this.CHOICES_INPUT_CHANNEL_500 = [];
-
-		for (var i = 1; i < 129; i++) {
-			this.CHOICES_INPUT_CHANNEL.push({ label: i, id: i-1 });
-		}
-		for (var i = 129; i < 257; i++) {
-			this.CHOICES_INPUT_CHANNEL_256.push({ label: i, id: i-1 });
-		}
-		for (var i = 257; i < 385; i++) {
-			this.CHOICES_INPUT_CHANNEL_384.push({ label: i, id: i-1 });
-		}
-		for (var i = 385; i < 501; i++) {
-			this.CHOICES_INPUT_CHANNEL_500.push({ label: i, id: i-1 });
-		}
-
-
-		this.CHOICES_DCA_ON_CHANNEL = [];
-		var j = 0x40;
-		for (var i = 1; i < 25; i++) {
-			this.CHOICES_DCA_ON_CHANNEL.push({ label: i, id: j });
-			j++;
-		}
-
-		this.CHOICES_DCA_OFF_CHANNEL = [];
-		var j = 0x00;
-		for (var i = 1; i < 25; i++) {
-			this.CHOICES_DCA_OFF_CHANNEL.push({ label: i, id: j });
-			j++;
-		}
-
-		this.CHOICES_COLOR = [
-			{ label: 'off', id: 0x00 },
-			{ label: 'Red', id: 0x01 },
-			{ label: 'Green', id: 0x02 },
-			{ label: 'Yellow', id: 0x03 },
-			{ label: 'Blue', id: 0x04 },
-			{ label: 'Purple', id: 0x05 },
-			{ label: 'Lt Blue', id: 0x06 },
-			{ label: 'White', id: 0x07 }
-		];
-
 		Object.assign(this, {
-			...actions
+			...actions, ...upgrade
 		});
 
-		this.actions(); // export actions
+		this.addUpgradeScripts();
 	}
 
 	/**
@@ -87,11 +41,30 @@ class instance extends instance_skel {
 	 *
 	 * @param {EventEmitter} system - the brains of the operation
 	 * @access public
-	 * @since 1.1.0
+	 * @since 1.0.0
 	 */
 	actions(system) {
 
 		this.setActions(this.getActions());
+	
+	}
+
+	setRouting(ch, selArray, isMute) {
+		let routingCmds = [];
+		let start = isMute ? 24 : 0
+		let qty = isMute ? 8 : 24
+		for (let i = start; i < start + qty; i++) {
+			if (this.MIDI) {
+				let grpCode = i + (selArray.includes(`${i}`) ? 0x40 : 0);
+				routingCmds.push(new Buffer([ 0xB0, 0x63, ch, 0xB0, 0x62, 0x40, 0xB0, 0x06, grpCode]));
+			} else {
+				let chCode = 0xC000 | ((0xF8 + ch) << 5)
+				chCode |= i;
+				routingCmds.push(new Buffer([ 0xF0, 0, 2, 0, 0x28, 0, 0x27, chCode >> 8, chCode & 0xFF, 0, 1, selArray.includes(`${i}`) ? 1 : 0, 0xF7 ]))
+			}
+		}
+		
+		return routingCmds;
 	}
 
 	/**
@@ -102,83 +75,73 @@ class instance extends instance_skel {
 	 * @since 1.0.0
 	 */
 	action(action) {
-		var self = this;
-		var id = action.action;
-		var opt = action.options;
+		var self    = this;
+		var opt     = action.options;
 		var channel = parseInt(opt.inputChannel);
-		var sceneNumber = parseInt(opt.sceneNumber);
-		var sysExHeader = new Buffer([ 0xF0, 0x00, 0x00, 0x1A, 0x50, 0x10, 0x01, 0x00]);
-		var cmd;
+		var cmd     = [];
 
-		function ascii_to_hexa(str) {
-			var arr1 = [];
-			for (var n = 0, l = str.length; n < l; n ++) {
-				var hex = Number(str.charCodeAt(n)).toString(16);
-				arr1.push(hex);
-			}
-			return arr1.join('');
-		}
-
-		switch (id) {
+		switch (action.action) { // Note that only available actions for the type (TCP or MIDI) will be processed
 
 			case 'mute_input':
-				if (opt.mute == 'mute_on') {
-					cmd = new Buffer([ 0x90 + 0, channel, 0x7f, 0x90 + 0, channel, 0x00 ]);
+				if (this.MIDI) {
+					cmd = [ new Buffer([ 0x90, channel, opt.mute ? 0x7f : 0x3f, 0x90, channel, 0 ]) ];
 				} else {
-					cmd = new Buffer([ 0x90 + 0, channel, 0x3f, 0x90 + 0, channel, 0x00 ]);
+					let chCode = 0x3180 | channel;
+					cmd = [ new Buffer([ 0xF0, 0, 2, 0, 0x28, 0, 0x27, chCode >> 8, chCode & 0xFF, 0, 1, opt.mute ? 1 : 0, 0xF7 ]) ];
 				}
 				break;
 
-			case 'main_assignment':
-				if (opt.main_mix == 'on') {
-					cmd = new Buffer([ 0xB0 + 0, 0x63, channel, 0xB0 + 0, 0x62, 0x18, 0xB0 + 0, 0x06, 0x7F ]);
+			case 'mute_fx_bus':
+				if (this.MIDI) {
+					cmd = [ new Buffer([ 0x94, opt.fxBus, opt.mute ? 0x7f : 0x3f, 0x94, opt.fxBus, 0 ]) ];
 				} else {
-						cmd = new Buffer([ 0xB0 + 0, 0x63, channel, 0xB0 + 0, 0x62, 0x18, 0xB0 + 0, 0x06, 0x3F ]);
+					let fxCode = 0x1010 | parseInt(opt.fxBus);
+					cmd = [ new Buffer([ 0xF0, 0, 2, 0, 0x2b, 0, 0x2a, fxCode >> 8, fxCode & 0xFF, 0, 1, opt.mute ? 1 : 0, 0xF7 ]) ];
 				}
 				break;
 
-			case 'dca_assignment_on':
-				cmd = new Buffer([ 0xB0 + 0, 0x63, channel, 0xB0 + 0, 0x62, 0x40, 0xB0 + 0, 0x06, opt.dcaChannel ]);
+			case 'mute_group':
+			case 'mute_dca':
+				if (this.MIDI) {
+					cmd = [ new Buffer([ 0x94, parseInt(opt.group) + 0x36, opt.mute ? 0x7f : 0x3f, 0x94, parseInt(opt.group) + 0x36, 0 ]) ];
+				} else {
+					let grpCode = 0x1020 | parseInt(opt.group);
+					cmd = [ new Buffer([ 0xF0, 0, 2, 0, 0x24, 0, 0x23, grpCode >> 8, grpCode & 0xFF, 0, 1, opt.mute ? 1 : 0, 0xF7 ]) ];
+				}
 				break;
 
-			case 'dca_assignment_off':
-				cmd = new Buffer([ 0xB0 + 0, 0x63, channel, 0xB0 + 0, 0x62, 0x40, 0xB0 + 0, 0x06, opt.dcaChannel ]);
+			case 'dca_assign':
+				cmd = this.setRouting(channel, opt.dcaGroup, false);
 				break;
 
-			case 'channel_name':
-				var syntax = new Buffer([0x00, 0x03, channel]);
-				var name = new Buffer.from(new String(opt.chName));
-				var end = new Buffer(([0xF7]));
-				cmd = Buffer.concat([sysExHeader, syntax, name, end]);
+			case 'mute_assign':
+				cmd = this.setRouting(channel, opt.muteGroup, true);
 				break;
 
-			case 'channel_color':
-				var syntax = new Buffer([0x00, 0x06]);
-				var color = new Buffer(([channel, opt.channelColor, 0xF7]));
-				cmd = Buffer.concat([sysExHeader, syntax, color]);
+			case 'scene_recall':
+				let sceneNumber = parseInt(opt.sceneNumber);
+				if (this.MIDI) {
+					cmd = [ new Buffer([ 0xB0, 0, (sceneNumber >> 7) & 0x0F, 0xC0, sceneNumber & 0x7F ]) ];
+				} else {
+					cmd = [ new Buffer([ 0xF0, 0, 2, 0, 0x0C, 0x22, 0x2E, 0x10, 0x1D, 0, 3, sceneNumber >> 8, sceneNumber & 0xFF, 0, 0xF7 ]) ];
+				}
 				break;
 
-			case 'scene_recall_128':
-				cmd = new Buffer([ 0xB0, 0x00, 0x00, 0xC0, sceneNumber ]);
+			case 'talkback_on':
+				cmd = [ new Buffer([ 0xF0, 0, 2, 0 ,0x4B, 0, 0x4A, 0x10, 0xE7, 0, 1, opt.on ? 1 : 0, 0xF7 ]) ];
 				break;
 
-			case 'scene_recall_256':
-				cmd = new Buffer([ 0xB0, 0x00, 0x01, 0xC0, sceneNumber ]);
-				break;
+			case 'vsc':
+				cmd = [ new Buffer([ 0xF0, 0, 2, 0, 0x4B, 0, 0x4A, 0x10, 0x8A, 0, 1, opt.vscMode, 0xF7 ]) ];
 
-			case 'scene_recall_384':
-				cmd = new Buffer([ 0xB0, 0x00, 0x02, 0xC0, sceneNumber ]);
-				break;
-
-			case 'scene_recall_500':
-				cmd = new Buffer([ 0xB0, 0x00, 0x03, 0xC0, sceneNumber ]);
-				break;
 		}
 
 		if (cmd !== undefined) {
 			if (self.socket !== undefined) {
-				debug('sending ', cmd, "to", this.config.host);
-				self.socket.write(cmd);
+				for (let i = 0; i < cmd.length; i++) {
+					this.log('debug', `sending ${cmd[i].toString('hex')} to ${this.config.host}`);
+					self.socket.write(cmd[i]);
+				}
 			}
 		}
 	}
@@ -188,33 +151,36 @@ class instance extends instance_skel {
 	 *
 	 * @returns {Array} the config fields
 	 * @access public
-	 * @since 1.1.0
+	 * @since 1.0.0
 	 */
 	config_fields() {
 
 		return [
 			{
-				type: 'text',
-				id: 'info',
+				type:  'text',
+				id:    'info',
 				width: 12,
 				label: 'Information',
-				value: 'This module is for dLive'
+				value: 'dLive: This module is for the A&H dLive'
 			},
 			{
-				type: 'textinput',
-				id: 'host',
-				label: 'Target IP',
-				width: 6,
-				default: '192.168.2.60',
-				regex: this.REGEX_IP
+				type:    'textinput',
+				id:      'host',
+				label:   'Target IP',
+				width:   6,
+				default: '192.168.1.70',
+				regex:   this.REGEX_IP
 			},
 			{
-				type: 'textinput',
-				id: 'port',
-				label: 'port number',
-				width: 12,
-				default: '51325',
-				regex: this.REGEX_PORT
+				type:    'dropdown',
+				id:      'port',
+				label:   'MIDI or TCP',
+				width:   12,
+				default: '51321',
+				choices: [
+					{id: '51321', label: 'TCP'},
+					{id: '51325', label: 'MIDI'}
+				]
 			}
 		]
 	}
@@ -223,14 +189,14 @@ class instance extends instance_skel {
 	 * Clean up the instance before it is destroyed.
 	 *
 	 * @access public
-	 * @since 1.1.0
+	 * @since 1.0.0
 	 */
 	destroy() {
 		if (this.socket !== undefined) {
 			this.socket.destroy();
 		}
 
-		debug("destroy", this.id);
+		this.log('debug', `destroyed ${this.id}`);
 	}
 
 	/**
@@ -238,13 +204,12 @@ class instance extends instance_skel {
 	 * is OK to start doing things.
 	 *
 	 * @access public
-	 * @since 1.1.0
+	 * @since 1.0.0
 	 */
 	init() {
-		debug = this.debug;
-		log = this.log;
 
-		this.init_tcp();
+		this.updateConfig(this.config);
+
 	}
 
 	/**
@@ -261,10 +226,6 @@ class instance extends instance_skel {
 			delete this.socket;
 		}
 
-		if (this.config.port === undefined) {
-			this.config.port = 51325;
-		}
-
 		if (this.config.host) {
 			this.socket = new tcp(this.config.host, this.config.port);
 
@@ -273,12 +234,11 @@ class instance extends instance_skel {
 			});
 
 			this.socket.on('error', (err) => {
-				this.debug("Network error", err);
-				this.log('error',"Network error: " + err.message);
+				this.log('error', "Network error: " + err.message);
 			});
 
 			this.socket.on('connect', () => {
-				this.debug("Connected");
+				this.log('debug', `Connected to ${this.config.host}`);
 			});
 
 			// separate buffered stream into lines with responses
@@ -296,7 +256,7 @@ class instance extends instance_skel {
 			});
 
 			this.socket.on('receiveline', (line) => {
-				//console.log('response: ' +line);
+				console.log('Received: ' + line);
 			});
 		}
 	}
@@ -309,20 +269,13 @@ class instance extends instance_skel {
 	 * @since 1.1.0
 	 */
 	updateConfig(config) {
-		var resetConnection = false;
-
-		if (this.config.host != config.host)
-		{
-			resetConnection = true;
-		}
-
+		
 		this.config = config;
-
+		this.MIDI   = (config.port == '51325');
+		
 		this.actions();
+		this.init_tcp();
 
-		if (resetConnection === true || this.socket === undefined) {
-			this.init_tcp();
-		}
 	}
 
 }

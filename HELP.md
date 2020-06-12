@@ -1,3 +1,22 @@
-## Allen & Heath dLive module
+# Allen & Heath dLive TCP module
 
-> Make sure to change the midi notes under utility > control to 1-5 instead of the default.
+Controls the Allen & Heath dLive via MIDI or TCP commands.
+
+## Functions:
+
+
+* Mute Channel
+* Mute FX Buses
+* Mute Group
+* Mute DCA
+* Mute Assign
+* DCA Assign
+* Recall Scene
+* Talkback On (TCP mode only)
+* Virtual SoundCheck mode (TCP mode only)
+
+> Current version: 1.1.0
+
+Bugs, comments, suggestions, please visit:
+
+http://www.checkcheckonetwo.com
