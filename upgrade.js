@@ -4,10 +4,10 @@ module.exports = {
 
         console.log('Running upgrade script.');
         
-        // Upgrade  1.0.x > 1.1.0
+        // Upgrade  1.0.x > 1.2.0
         this.addUpgradeScript((config, actions, releaseActions, feedbacks) => {
-            var changed = false;
-            console.log('Running 1.0.x -> 1.1.0 Upgrade.')
+            let changed = false;
+            console.log('Running 1.0.x -> 1.2.0 Upgrade.')
         
             let checkUpgrade = function(action, changed) {
                 let newAction = '';

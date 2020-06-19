@@ -1,18 +1,20 @@
 /**
  * 
  * Companion instance class for the A&H dLive.
- * @version 1.1.0
+ * @version 1.2.0
  * 
  */
 
-var tcp           = require('../../tcp');
-var instance_skel = require('../../instance_skel');
-var actions       = require('./actions');
-var upgrade       = require('./upgrade');
+let tcp           = require('../../tcp');
+let instance_skel = require('../../instance_skel');
+let actions       = require('./actions');
+let upgrade       = require('./upgrade');
+const MIDI = 51325;
+const TCP  = 51321;
 
 /**
  * @extends instance_skel
- * @since 1.0.0
+ * @since 1.2.0
  * @author Andrew Broughton <andy@checkcheckonetwo.com>
  */
 
@@ -24,7 +26,7 @@ class instance extends instance_skel {
 	* @param {EventEmitter} system - the brains of the operation
 	* @param {string} id - the instance ID
 	* @param {Object} config - saved user configuration parameters
-	* @since 1.0.0
+	* @since 1.2.0
 	*/
 	constructor(system, id, config) {
 		super(system, id, config);
@@ -41,7 +43,7 @@ class instance extends instance_skel {
 	 *
 	 * @param {EventEmitter} system - the brains of the operation
 	 * @access public
-	 * @since 1.0.0
+	 * @since 1.2.0
 	 */
 	actions(system) {
 
@@ -51,17 +53,11 @@ class instance extends instance_skel {
 
 	setRouting(ch, selArray, isMute) {
 		let routingCmds = [];
-		let start = isMute ? 24 : 0
-		let qty = isMute ? 8 : 24
+		let start = isMute ? 24 : 0;
+		let qty = isMute ? 8 : 24;
 		for (let i = start; i < start + qty; i++) {
-			if (this.MIDI) {
-				let grpCode = i + (selArray.includes(`${i}`) ? 0x40 : 0);
-				routingCmds.push(new Buffer([ 0xB0, 0x63, ch, 0xB0, 0x62, 0x40, 0xB0, 0x06, grpCode]));
-			} else {
-				let chCode = 0xC000 | ((0xF8 + ch) << 5)
-				chCode |= i;
-				routingCmds.push(new Buffer([ 0xF0, 0, 2, 0, 0x28, 0, 0x27, chCode >> 8, chCode & 0xFF, 0, 1, selArray.includes(`${i}`) ? 1 : 0, 0xF7 ]))
-			}
+			let grpCode = i + (selArray.includes(`${i - start}`) ? 0x40 : 0);
+			routingCmds.push(new Buffer([ 0xB0, 0x63, ch, 0xB0, 0x62, 0x40, 0xB0, 0x06, grpCode]));
 		}
 		
 		return routingCmds;
@@ -72,75 +68,85 @@ class instance extends instance_skel {
 	 *
 	 * @param {Object} action - the action to be executed
 	 * @access public
-	 * @since 1.0.0
+	 * @since 1.2.0
 	 */
 	action(action) {
-		var self    = this;
-		var opt     = action.options;
-		var channel = parseInt(opt.inputChannel);
-		var cmd     = [];
+		let self    = this;
+		let opt     = action.options;
+		let channel = parseInt(opt.inputChannel);
+		let strip   = parseInt(opt.strip);
+		let cmd     = {port: MIDI, hex:[]};
 
 		switch (action.action) { // Note that only available actions for the type (TCP or MIDI) will be processed
 
 			case 'mute_input':
-				if (this.MIDI) {
-					cmd = [ new Buffer([ 0x90, channel, opt.mute ? 0x7f : 0x3f, 0x90, channel, 0 ]) ];
-				} else {
-					let chCode = 0x3180 | channel;
-					cmd = [ new Buffer([ 0xF0, 0, 2, 0, 0x28, 0, 0x27, chCode >> 8, chCode & 0xFF, 0, 1, opt.mute ? 1 : 0, 0xF7 ]) ];
-				}
+				self.ch = 0;
 				break;
 
-			case 'mute_fx_bus':
-				if (this.MIDI) {
-					cmd = [ new Buffer([ 0x94, opt.fxBus, opt.mute ? 0x7f : 0x3f, 0x94, opt.fxBus, 0 ]) ];
-				} else {
-					let fxCode = 0x1010 | parseInt(opt.fxBus);
-					cmd = [ new Buffer([ 0xF0, 0, 2, 0, 0x2b, 0, 0x2a, fxCode >> 8, fxCode & 0xFF, 0, 1, opt.mute ? 1 : 0, 0xF7 ]) ];
-				}
+			case 'mute_mono_group':
+			case 'mute_stereo_group':
+				self.ch = 1;
 				break;
 
-			case 'mute_group':
+			case 'mute_mono_aux':
+			case 'mute_stereo_aux':
+				self.ch = 2;
+				break;
+
+			case 'mute_mono_matrix':
+			case 'mute_stereo_matrix':
+				self.ch = 3;
+				break;
+
+			case 'mute_mono_fx_send':
+			case 'mute_stereo_fx_send':
+			case 'mute_fx_return':
 			case 'mute_dca':
-				if (this.MIDI) {
-					cmd = [ new Buffer([ 0x94, parseInt(opt.group) + 0x36, opt.mute ? 0x7f : 0x3f, 0x94, parseInt(opt.group) + 0x36, 0 ]) ];
-				} else {
-					let grpCode = 0x1020 | parseInt(opt.group);
-					cmd = [ new Buffer([ 0xF0, 0, 2, 0, 0x24, 0, 0x23, grpCode >> 8, grpCode & 0xFF, 0, 1, opt.mute ? 1 : 0, 0xF7 ]) ];
-				}
+			case 'mute_master':
+				self.ch = 4;
 				break;
 
 			case 'dca_assign':
-				cmd = this.setRouting(channel, opt.dcaGroup, false);
+				cmd.hex = this.setRouting(channel, opt.dcaGroup, false);
 				break;
 
 			case 'mute_assign':
-				cmd = this.setRouting(channel, opt.muteGroup, true);
+				cmd.hex = this.setRouting(channel, opt.muteGroup, true);
 				break;
 
 			case 'scene_recall':
 				let sceneNumber = parseInt(opt.sceneNumber);
-				if (this.MIDI) {
-					cmd = [ new Buffer([ 0xB0, 0, (sceneNumber >> 7) & 0x0F, 0xC0, sceneNumber & 0x7F ]) ];
-				} else {
-					cmd = [ new Buffer([ 0xF0, 0, 2, 0, 0x0C, 0x22, 0x2E, 0x10, 0x1D, 0, 3, sceneNumber >> 8, sceneNumber & 0xFF, 0, 0xF7 ]) ];
-				}
+				cmd.hex = [ new Buffer([ 0xB0, 0, (sceneNumber >> 7) & 0x0F, 0xC0, sceneNumber & 0x7F ]) ]
 				break;
 
 			case 'talkback_on':
-				cmd = [ new Buffer([ 0xF0, 0, 2, 0 ,0x4B, 0, 0x4A, 0x10, 0xE7, 0, 1, opt.on ? 1 : 0, 0xF7 ]) ];
+				cmd = {
+					port: TCP,
+					hex: [ new Buffer([ 0xF0, 0, 2, 0 ,0x4B, 0, 0x4A, 0x10, 0xE7, 0, 1, opt.on ? 1 : 0, 0xF7 ]) ]
+				};
 				break;
 
 			case 'vsc':
-				cmd = [ new Buffer([ 0xF0, 0, 2, 0, 0x4B, 0, 0x4A, 0x10, 0x8A, 0, 1, opt.vscMode, 0xF7 ]) ];
+				cmd = {
+					port: TCP,
+					hex:  [ new Buffer([ 0xF0, 0, 2, 0, 0x4B, 0, 0x4A, 0x10, 0x8A, 0, 1, opt.vscMode, 0xF7 ]) ]
+				};
 
 		}
 
-		if (cmd !== undefined) {
-			if (self.socket !== undefined) {
-				for (let i = 0; i < cmd.length; i++) {
-					this.log('debug', `sending ${cmd[i].toString('hex')} to ${this.config.host}`);
-					self.socket.write(cmd[i]);
+		if (cmd.hex.length == 0) {
+			cmd.hex = [ new Buffer([ 0x90 + self.ch, strip, opt.mute ? 0x7f : 0x3f, 0x90 + self.ch, strip, 0 ]) ];
+		}
+
+//console.log(cmd);
+
+		if (self.tcpSocket !== undefined) {
+			for (let i = 0; i < cmd.hex.length; i++) {
+				self.log('debug', `sending ${cmd.hex[i].toString('hex')} to ${self.config.host}`);
+				if (cmd.port === MIDI) {
+					self.midiSocket.write(cmd.hex[i]);
+				} else {
+					self.tcpSocket.write(cmd.hex[i]);
 				}
 			}
 		}
@@ -151,7 +157,7 @@ class instance extends instance_skel {
 	 *
 	 * @returns {Array} the config fields
 	 * @access public
-	 * @since 1.0.0
+	 * @since 1.2.0
 	 */
 	config_fields() {
 
@@ -170,17 +176,6 @@ class instance extends instance_skel {
 				width:   6,
 				default: '192.168.1.70',
 				regex:   this.REGEX_IP
-			},
-			{
-				type:    'dropdown',
-				id:      'port',
-				label:   'MIDI or TCP',
-				width:   12,
-				default: '51321',
-				choices: [
-					{id: '51321', label: 'TCP'},
-					{id: '51325', label: 'MIDI'}
-				]
 			}
 		]
 	}
@@ -189,14 +184,20 @@ class instance extends instance_skel {
 	 * Clean up the instance before it is destroyed.
 	 *
 	 * @access public
-	 * @since 1.0.0
+	 * @since 1.2.0
 	 */
 	destroy() {
-		if (this.socket !== undefined) {
-			this.socket.destroy();
+		let self = this;
+
+		if (self.tcpSocket !== undefined) {
+			self.tcpSocket.destroy();
 		}
 
-		this.log('debug', `destroyed ${this.id}`);
+		if (self.midiSocket !== undefined) {
+			self.midiSocket.destroy();
+		}
+
+		self.log('debug', `destroyed ${self.id}`);
 	}
 
 	/**
@@ -204,7 +205,7 @@ class instance extends instance_skel {
 	 * is OK to start doing things.
 	 *
 	 * @access public
-	 * @since 1.0.0
+	 * @since 1.2.0
 	 */
 	init() {
 
@@ -213,51 +214,49 @@ class instance extends instance_skel {
 	}
 
 	/**
-	 * INTERNAL: use setup data to initalize the tcp socket object.
+	 * INTERNAL: use setup data to initalize the tcp tcpSocket object.
 	 *
 	 * @access protected
-	 * @since 1.0.0
+	 * @since 1.2.0
 	 */
 	init_tcp() {
-		var receivebuffer = '';
+		let self = this;
+		let receivebuffer = '';
 
-		if (this.socket !== undefined) {
-			this.socket.destroy();
-			delete this.socket;
+		if (self.tcpSocket !== undefined) {
+			self.tcpSocket.destroy();
+			delete self.tcpSocket;
 		}
 
-		if (this.config.host) {
-			this.socket = new tcp(this.config.host, this.config.port);
+		if (self.midiSocket !== undefined) {
+			self.midiSocket.destroy();
+			delete self.midiSocket;
+		}
 
-			this.socket.on('status_change', (status, message) => {
-				this.status(status, message);
+		if (self.config.host) {
+			self.tcpSocket = new tcp(self.config.host, TCP);
+			self.midiSocket = new tcp(self.config.host, MIDI);
+
+			self.tcpSocket.on('status_change', (status, message) => {
+				self.status(status, message);
 			});
 
-			this.socket.on('error', (err) => {
-				this.log('error', "Network error: " + err.message);
+			self.tcpSocket.on('error', (err) => {
+				self.log('error', "TCP error: " + err.message);
 			});
 
-			this.socket.on('connect', () => {
-				this.log('debug', `Connected to ${this.config.host}`);
+			self.midiSocket.on('error', (err) => {
+				self.log('error', "MIDI error: " + err.message);
 			});
 
-			// separate buffered stream into lines with responses
-			this.socket.on('data', (chunk) => {
-				var i = 0, line = '', offset = 0;
-				receivebuffer += chunk;
-
-				while ( (i = receivebuffer.indexOf('\n', offset)) !== -1) {
-					line = receivebuffer.substr(offset, i - offset);
-					offset = i + 1;
-					this.socket.emit('receiveline', line.toString());
-				}
-
-				receivebuffer = receivebuffer.substr(offset);
+			self.tcpSocket.on('connect', () => {
+				self.log('debug', `TCP Connected to ${this.config.host}`);
 			});
 
-			this.socket.on('receiveline', (line) => {
-				console.log('Received: ' + line);
+			self.midiSocket.on('connect', () => {
+				self.log('debug', `MIDI Connected to ${this.config.host}`);
 			});
+
 		}
 	}
 
@@ -266,15 +265,15 @@ class instance extends instance_skel {
 	 *
 	 * @param {Object} config - the new configuration
 	 * @access public
-	 * @since 1.1.0
+	 * @since 1.2.0
 	 */
 	updateConfig(config) {
+		let self = this;
 		
-		this.config = config;
-		this.MIDI   = (config.port == '51325');
+		self.config = config;
 		
-		this.actions();
-		this.init_tcp();
+		self.actions();
+		self.init_tcp();
 
 	}
 

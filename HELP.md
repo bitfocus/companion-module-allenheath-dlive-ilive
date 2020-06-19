@@ -1,6 +1,6 @@
 # Allen & Heath dLive TCP module
 
-Controls the Allen & Heath dLive via MIDI or TCP commands.
+Controls the Allen & Heath dLive.
 
 ## Functions:
 
@@ -12,10 +12,10 @@ Controls the Allen & Heath dLive via MIDI or TCP commands.
 * Mute Assign
 * DCA Assign
 * Recall Scene
-* Talkback On (TCP mode only)
-* Virtual SoundCheck mode (TCP mode only)
+* Talkback On
+* Virtual SoundCheck mode
 
-> Current version: 1.1.0
+> Current version: 1.2.0
 
 Bugs, comments, suggestions, please visit:
 
