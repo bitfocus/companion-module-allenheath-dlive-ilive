@@ -52,6 +52,7 @@ class instance extends instance_skel {
 	}
 
 	setRouting(ch, selArray, isMute) {
+
 		let routingCmds = [];
 		let start = isMute ? 24 : 0;
 		let qty = isMute ? 8 : 24;
@@ -71,7 +72,7 @@ class instance extends instance_skel {
 	 * @since 1.2.0
 	 */
 	action(action) {
-		let self    = this;
+
 		let opt     = action.options;
 		let channel = parseInt(opt.inputChannel);
 		let strip   = parseInt(opt.strip);
@@ -80,22 +81,22 @@ class instance extends instance_skel {
 		switch (action.action) { // Note that only available actions for the type (TCP or MIDI) will be processed
 
 			case 'mute_input':
-				self.ch = 0;
+				this.ch = 0;
 				break;
 
 			case 'mute_mono_group':
 			case 'mute_stereo_group':
-				self.ch = 1;
+				this.ch = 1;
 				break;
 
 			case 'mute_mono_aux':
 			case 'mute_stereo_aux':
-				self.ch = 2;
+				this.ch = 2;
 				break;
 
 			case 'mute_mono_matrix':
 			case 'mute_stereo_matrix':
-				self.ch = 3;
+				this.ch = 3;
 				break;
 
 			case 'mute_mono_fx_send':
@@ -103,7 +104,7 @@ class instance extends instance_skel {
 			case 'mute_fx_return':
 			case 'mute_dca':
 			case 'mute_master':
-				self.ch = 4;
+				this.ch = 4;
 				break;
 
 			case 'dca_assign':
@@ -135,18 +136,18 @@ class instance extends instance_skel {
 		}
 
 		if (cmd.hex.length == 0) {
-			cmd.hex = [ new Buffer([ 0x90 + self.ch, strip, opt.mute ? 0x7f : 0x3f, 0x90 + self.ch, strip, 0 ]) ];
+			cmd.hex = [ new Buffer([ 0x90 + this.ch, strip, opt.mute ? 0x7f : 0x3f, 0x90 + this.ch, strip, 0 ]) ];
 		}
 
 //console.log(cmd);
 
-		if (self.tcpSocket !== undefined) {
+		if (this.tcpSocket !== undefined) {
 			for (let i = 0; i < cmd.hex.length; i++) {
-				self.log('debug', `sending ${cmd.hex[i].toString('hex')} to ${self.config.host}`);
+				this.log('debug', `sending ${cmd.hex[i].toString('hex')} to ${this.config.host}`);
 				if (cmd.port === MIDI) {
-					self.midiSocket.write(cmd.hex[i]);
+					this.midiSocket.write(cmd.hex[i]);
 				} else {
-					self.tcpSocket.write(cmd.hex[i]);
+					this.tcpSocket.write(cmd.hex[i]);
 				}
 			}
 		}
@@ -187,17 +188,16 @@ class instance extends instance_skel {
 	 * @since 1.2.0
 	 */
 	destroy() {
-		let self = this;
 
-		if (self.tcpSocket !== undefined) {
-			self.tcpSocket.destroy();
+		if (this.tcpSocket !== undefined) {
+			this.tcpSocket.destroy();
 		}
 
-		if (self.midiSocket !== undefined) {
-			self.midiSocket.destroy();
+		if (this.midiSocket !== undefined) {
+			this.midiSocket.destroy();
 		}
 
-		self.log('debug', `destroyed ${self.id}`);
+		this.log('debug', `destroyed ${this.id}`);
 	}
 
 	/**
@@ -220,41 +220,39 @@ class instance extends instance_skel {
 	 * @since 1.2.0
 	 */
 	init_tcp() {
-		let self = this;
-		let receivebuffer = '';
 
-		if (self.tcpSocket !== undefined) {
-			self.tcpSocket.destroy();
-			delete self.tcpSocket;
+		if (this.tcpSocket !== undefined) {
+			this.tcpSocket.destroy();
+			delete this.tcpSocket;
 		}
 
-		if (self.midiSocket !== undefined) {
-			self.midiSocket.destroy();
-			delete self.midiSocket;
+		if (this.midiSocket !== undefined) {
+			this.midiSocket.destroy();
+			delete this.midiSocket;
 		}
 
-		if (self.config.host) {
-			self.tcpSocket = new tcp(self.config.host, TCP);
-			self.midiSocket = new tcp(self.config.host, MIDI);
+		if (this.config.host) {
+			this.tcpSocket = new tcp(this.config.host, TCP);
+			this.midiSocket = new tcp(this.config.host, MIDI);
 
-			self.tcpSocket.on('status_change', (status, message) => {
-				self.status(status, message);
+			this.tcpSocket.on('status_change', (status, message) => {
+				this.status(status, message);
 			});
 
-			self.tcpSocket.on('error', (err) => {
-				self.log('error', "TCP error: " + err.message);
+			this.tcpSocket.on('error', (err) => {
+				this.log('error', "TCP error: " + err.message);
 			});
 
-			self.midiSocket.on('error', (err) => {
-				self.log('error', "MIDI error: " + err.message);
+			this.midiSocket.on('error', (err) => {
+				this.log('error', "MIDI error: " + err.message);
 			});
 
-			self.tcpSocket.on('connect', () => {
-				self.log('debug', `TCP Connected to ${this.config.host}`);
+			this.tcpSocket.on('connect', () => {
+				this.log('debug', `TCP Connected to ${this.config.host}`);
 			});
 
-			self.midiSocket.on('connect', () => {
-				self.log('debug', `MIDI Connected to ${this.config.host}`);
+			this.midiSocket.on('connect', () => {
+				this.log('debug', `MIDI Connected to ${this.config.host}`);
 			});
 
 		}
@@ -268,12 +266,11 @@ class instance extends instance_skel {
 	 * @since 1.2.0
 	 */
 	updateConfig(config) {
-		let self = this;
+
+		this.config = config;
 		
-		self.config = config;
-		
-		self.actions();
-		self.init_tcp();
+		this.actions();
+		this.init_tcp();
 
 	}
 
