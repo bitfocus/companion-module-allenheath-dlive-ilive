@@ -76,7 +76,7 @@ class instance extends instance_skel {
 		let opt     = action.options;
 		let channel = parseInt(opt.inputChannel);
 		let strip   = parseInt(opt.strip);
-		let cmd     = {port: MIDI, hex:[]};
+		let cmd     = {port: MIDI, buffers:[]};
 
 		switch (action.action) { // Note that only available actions for the type (TCP or MIDI) will be processed
 
@@ -108,46 +108,46 @@ class instance extends instance_skel {
 				break;
 
 			case 'dca_assign':
-				cmd.hex = this.setRouting(channel, opt.dcaGroup, false);
+				cmd.buffers = this.setRouting(channel, opt.dcaGroup, false);
 				break;
 
 			case 'mute_assign':
-				cmd.hex = this.setRouting(channel, opt.muteGroup, true);
+				cmd.buffers = this.setRouting(channel, opt.muteGroup, true);
 				break;
 
 			case 'scene_recall':
 				let sceneNumber = parseInt(opt.sceneNumber);
-				cmd.hex = [ new Buffer([ 0xB0, 0, (sceneNumber >> 7) & 0x0F, 0xC0, sceneNumber & 0x7F ]) ]
+				cmd.buffers = [ new Buffer([ 0xB0, 0, (sceneNumber >> 7) & 0x0F, 0xC0, sceneNumber & 0x7F ]) ]
 				break;
 
 			case 'talkback_on':
 				cmd = {
 					port: TCP,
-					hex: [ new Buffer([ 0xF0, 0, 2, 0 ,0x4B, 0, 0x4A, 0x10, 0xE7, 0, 1, opt.on ? 1 : 0, 0xF7 ]) ]
+					buffers: [ new Buffer([ 0xF0, 0, 2, 0 ,0x4B, 0, 0x4A, 0x10, 0xE7, 0, 1, opt.on ? 1 : 0, 0xF7 ]) ]
 				};
 				break;
 
 			case 'vsc':
 				cmd = {
 					port: TCP,
-					hex:  [ new Buffer([ 0xF0, 0, 2, 0, 0x4B, 0, 0x4A, 0x10, 0x8A, 0, 1, opt.vscMode, 0xF7 ]) ]
+					buffers:  [ new Buffer([ 0xF0, 0, 2, 0, 0x4B, 0, 0x4A, 0x10, 0x8A, 0, 1, opt.vscMode, 0xF7 ]) ]
 				};
 
 		}
 
-		if (cmd.hex.length == 0) {
-			cmd.hex = [ new Buffer([ 0x90 + this.ch, strip, opt.mute ? 0x7f : 0x3f, 0x90 + this.ch, strip, 0 ]) ];
+		if (cmd.buffers.length == 0) {
+			cmd.buffers = [ new Buffer([ 0x90 + this.ch, strip, opt.mute ? 0x7f : 0x3f, 0x90 + this.ch, strip, 0 ]) ];
 		}
 
 //console.log(cmd);
 
 		if (this.tcpSocket !== undefined) {
-			for (let i = 0; i < cmd.hex.length; i++) {
-				this.log('debug', `sending ${cmd.hex[i].toString('hex')} to ${this.config.host}`);
+			for (let i = 0; i < cmd.buffers.length; i++) {
+				this.log('debug', `sending ${cmd.buffers[i].toString('hex')} to ${this.config.host}`);
 				if (cmd.port === MIDI) {
-					this.midiSocket.write(cmd.hex[i]);
+					this.midiSocket.write(cmd.buffers[i]);
 				} else {
-					this.tcpSocket.write(cmd.hex[i]);
+					this.tcpSocket.write(cmd.buffers[i]);
 				}
 			}
 		}
