@@ -3,15 +3,19 @@ module.exports = {
     addUpgradeScripts() {
 
         console.log('Running upgrade script.');
-        
+        // this.config._configIdx = -1; // For Debugging upgradeScript only
+
         // Upgrade  1.0.x > 1.2.0
         this.addUpgradeScript((config, actions, releaseActions, feedbacks) => {
-            let changed = false;
-            console.log('Running 1.0.x -> 1.2.0 Upgrade.')
         
-            let checkUpgrade = function(action, changed) {
+            let changed = false;
+            let dcaChArr  = [];
+ 
+            console.log('Running 1.0.x -> 1.2.0 Upgrade.');
+        
+            let checkUpgrade = ((action, changed) => {
                 let newAction = '';
-
+ 
                 switch (action.action) {
                     case 'mute_input':
                         newAction           = action.action;
@@ -22,7 +26,7 @@ module.exports = {
                             dcaChArr[action.options.inputChannel] = [];
                         }
                         newAction = 'dca_assign';
-                        dcaChArr[action.options.inputChannel].push(action.options.dcaChannel);
+                        dcaChArr[action.options.inputChannel].push(`${(action.options.dcaChannel & 0x3F)}`);
                         break;
                     case 'scene_recall_128':
                     case 'scene_recall_256':
@@ -32,7 +36,7 @@ module.exports = {
                         break;
                 }
 
-                if(newAction != '') {
+                if (newAction != '') {
                     console.log(`Action ${action.action} => ${newAction}`);
                     action.action =  newAction;
                     action.label = this.id + ':' + action.action;
@@ -40,16 +44,16 @@ module.exports = {
                 }
 
                 return changed;
-            }
 
-            let dcaChArr = [];
+            });
+
             for (let k in actions) {
                 changed = checkUpgrade(actions[k], changed);
             }
+
             for (let k in actions) {
-                let a = actions[k];
-                if (a.action = 'dca_assign') {
-                    a.action.options.dcaGroup = dcaChArr[a.action.options.inputChannel];
+                if (actions[k].action == 'dca_assign') {
+                    actions[k].options['dcaGroup'] = dcaChArr[actions[k].options.inputChannel];
                 }
             }
 
@@ -58,13 +62,12 @@ module.exports = {
                 changed = checkUpgrade(releaseActions[k], changed);
             }
             for (let k in releaseActions) {
-                let r = releaseActions[k];
-                if (r.action = 'dca_assign') {
-                    r.action.options.dcaGroup = dcaChArr[r.action.options.inputChannel];
+                if (releaseActions[k].action == 'dca_assign') {
+                    releaseActions[k].options['dcaGroup'] = dcaChArr[releaseActions[k].options.inputChannel];
                 }
             }
 
-            return changed;
+          return changed;
         
         });
     }
