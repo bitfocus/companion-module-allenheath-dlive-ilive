@@ -1,18 +1,16 @@
 {
 	"name": "allenheath-dlive",
-	"version": "1.1.6",
+	"version": "1.2.0",
 	"api_version": "1.0.0",
-	"keywords": [
-		"Protocol"
-		],
+	"keywords": ["dLive"],
 	"manufacturer": "Allen & Heath",
-	"product": "dLive",
+	"product": ["dLive"],
 	"shortname": "dLive",
-	"description": "dLive midi plugin for Companion",
+	"description": "dLive module for Companion",
 	"main": "index.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
-	"author": "Jeffrey Davidsz <jeffrey.davidsz@vicreo.eu>",
+	"author": "Andrew Broughton <andy@checkcheckonetwo.com>",
 	"license": "MIT"
 }
