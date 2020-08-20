@@ -1,6 +1,6 @@
-# Allen & Heath dLive TCP module
+# Allen & Heath dLive & iLive module
 
-Controls the Allen & Heath dLive.
+Controls the Allen & Heath dLive and iLive.
 
 ## Functions:
 
@@ -9,13 +9,14 @@ Controls the Allen & Heath dLive.
 * Mute FX Buses
 * Mute Group
 * Mute DCA
+* Fader Levels
 * Mute Assign
 * DCA Assign
 * Recall Scene
-* Talkback On
-* Virtual SoundCheck mode
+* Talkback On (dLive only)
+* Virtual SoundCheck mode (dLive only)
 
-> Current version: 1.2.0
+> Current version: 1.3.0
 
 Bugs, comments, suggestions, please visit:
 

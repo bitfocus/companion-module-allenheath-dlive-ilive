@@ -1,7 +1,7 @@
 /**
  * 
- * Companion instance class for the A&H dLive.
- * @version 1.2.0
+ * Companion instance class for the A&H dLive & iLive.
+ * @version 1.3.0
  * 
  */
 
@@ -54,8 +54,8 @@ class instance extends instance_skel {
 	setRouting(ch, selArray, isMute) {
 
 		let routingCmds = [];
-		let start = isMute ? 24 : 0;
-		let qty = isMute ? 8 : 24;
+		let start = isMute ? this.dcaCount : 0;
+		let qty = isMute ? 8 : this.dcaCount;
 		for (let i = start; i < start + qty; i++) {
 			let grpCode = i + (selArray.includes(`${i - start}`) ? 0x40 : 0);
 			routingCmds.push(new Buffer([ 0xB0, 0x63, ch, 0xB0, 0x62, 0x40, 0xB0, 0x06, grpCode]));
@@ -75,28 +75,30 @@ class instance extends instance_skel {
 
 		let opt     = action.options;
 		let channel = parseInt(opt.inputChannel);
+		let chOfs   = 0;
 		let strip   = parseInt(opt.strip);
 		let cmd     = {port: MIDI, buffers:[]};
 
 		switch (action.action) { // Note that only available actions for the type (TCP or MIDI) will be processed
 
 			case 'mute_input':
-				this.ch = 0;
+			case 'mute_mix':
+				chOfs = 0;
 				break;
 
 			case 'mute_mono_group':
 			case 'mute_stereo_group':
-				this.ch = 1;
+				chOfs = (this.config.model == 'dLive') ? 1 : 0;
 				break;
 
 			case 'mute_mono_aux':
 			case 'mute_stereo_aux':
-				this.ch = 2;
+				chOfs = (this.config.model == 'dLive') ? 2 : 0;
 				break;
 
 			case 'mute_mono_matrix':
 			case 'mute_stereo_matrix':
-				this.ch = 3;
+				chOfs = (this.config.model == 'dLive') ? 3 : 0;
 				break;
 
 			case 'mute_mono_fx_send':
@@ -104,9 +106,40 @@ class instance extends instance_skel {
 			case 'mute_fx_return':
 			case 'mute_dca':
 			case 'mute_master':
-				this.ch = 4;
+				chOfs = (this.config.model == 'dLive') ? 4 : 0;
 				break;
 
+			case 'fader_input':
+			case 'fader_mix':
+				chOfs = 0;
+				break;
+			
+			case 'fader_mono_group':
+			case 'fader_stereo_group':
+				chOfs = 1;
+				break;
+				
+			case 'fader_mono_aux':
+			case 'fader_stereo_aux':
+				chOfs = 2;
+				break;
+
+			case 'fader_mono_matrix':
+			case 'fader_stereo_matrix':
+				chOfs = 3;
+				break;
+		
+			case 'fader_DCA':
+			case 'fader_mono_fx_send':
+			case 'fader_stereo_fx_send':
+			case 'fader_fx_return':
+				chOfs = (this.config.model == 'dLive' ? 4 : 0);
+				break;
+
+			case 'phantom':
+				cmd.buffers = [ new Buffer([ 0xF0, 0, 0, 0x1A, 0x50, 0x10, 0x01, 0, 0, 0x0C, strip, opt.phantom ? 0x7F : 0, 0xF7 ]) ];
+				break;
+	
 			case 'dca_assign':
 				cmd.buffers = this.setRouting(channel, opt.dcaGroup, false);
 				break;
@@ -135,23 +168,29 @@ class instance extends instance_skel {
 
 		}
 
-		if (cmd.buffers.length == 0) {
-			cmd.buffers = [ new Buffer([ 0x90 + this.ch, strip, opt.mute ? 0x7f : 0x3f, 0x90 + this.ch, strip, 0 ]) ];
-		}
-
-//console.log(cmd);
-
-		if (this.tcpSocket !== undefined) {
-			for (let i = 0; i < cmd.buffers.length; i++) {
-				this.log('debug', `sending ${cmd.buffers[i].toString('hex')} to ${this.config.host}`);
-				if (cmd.port === MIDI) {
-					this.midiSocket.write(cmd.buffers[i]);
-				} else {
-					this.tcpSocket.write(cmd.buffers[i]);
-				}
+		if (cmd.buffers.length == 0) { // Mute or Fader Level actions
+			if (action.action.slice(0 ,4) == 'mute') {
+				cmd.buffers = [ new Buffer([ 0x90 + chOfs, strip, opt.mute ? 0x7f : 0x3f, 0x90 + chOfs, strip, 0 ]) ];
+			} else {
+				let faderLevel = parseInt(opt.level);
+				cmd.buffers = [ new Buffer([ 0xB0 + chOfs, 0x63, strip, 0x62, 0x17, 0x06, faderLevel ]) ];
 			}
 		}
+
+// console.log(cmd);
+
+		for (let i = 0; i < cmd.buffers.length; i++) {
+			if (cmd.port === MIDI && this.midiSocket !== undefined) {
+				this.log('debug', `sending ${cmd.buffers[i].toString('hex')} via MIDI @${this.config.host}`);
+				this.midiSocket.write(cmd.buffers[i]);
+			} else if (this.tcpSocket !== undefined) {
+				this.log('debug', `sending ${cmd.buffers[i].toString('hex')} via TCP @${this.config.host}`);
+				this.tcpSocket.write(cmd.buffers[i]);
+			}
+		}
+
 	}
+
 
 	/**
 	 * Creates the configuration fields for web config.
@@ -168,7 +207,7 @@ class instance extends instance_skel {
 				id:    'info',
 				width: 12,
 				label: 'Information',
-				value: 'dLive: This module is for the A&H dLive'
+				value: 'dLive-iLive: This module is for the A&H dLive & iLive'
 			},
 			{
 				type:    'textinput',
@@ -177,6 +216,16 @@ class instance extends instance_skel {
 				width:   6,
 				default: '192.168.1.70',
 				regex:   this.REGEX_IP
+			},
+			{
+				type:    'dropdown',
+				id:      'model',
+				label:   'Console Type',
+				width:   6,
+				default: 'dLive',
+				choices: [
+					{id: 'dLive', label: 'dLive'},
+					{id: 'iLive', label: 'iLive'}]
 			}
 		]
 	}
@@ -232,29 +281,35 @@ class instance extends instance_skel {
 		}
 
 		if (this.config.host) {
-			this.tcpSocket = new tcp(this.config.host, TCP);
 			this.midiSocket = new tcp(this.config.host, MIDI);
 
-			this.tcpSocket.on('status_change', (status, message) => {
+			this.midiSocket.on('status_change', (status, message) => {
 				this.status(status, message);
-			});
-
-			this.tcpSocket.on('error', (err) => {
-				this.log('error', "TCP error: " + err.message);
 			});
 
 			this.midiSocket.on('error', (err) => {
 				this.log('error', "MIDI error: " + err.message);
 			});
 
-			this.tcpSocket.on('connect', () => {
-				this.log('debug', `TCP Connected to ${this.config.host}`);
-			});
-
 			this.midiSocket.on('connect', () => {
 				this.log('debug', `MIDI Connected to ${this.config.host}`);
 			});
 
+			if (this.config.model == 'dLive') {
+				this.tcpSocket = new tcp(this.config.host, TCP);
+				
+				this.tcpSocket.on('status_change', (status, message) => {
+					this.status(status, message);
+				});
+
+				this.tcpSocket.on('error', (err) => {
+					this.log('error', "TCP error: " + err.message);
+				});
+
+				this.tcpSocket.on('connect', () => {
+					this.log('debug', `TCP Connected to ${this.config.host}`);
+				});
+			}
 		}
 	}
 
