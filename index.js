@@ -56,9 +56,10 @@ class instance extends instance_skel {
 		let routingCmds = [];
 		let start = isMute ? this.dcaCount : 0;
 		let qty = isMute ? 8 : this.dcaCount;
+		let chOfs = (this.config.model == 'dLive') ? 0 : 0x20;
 		for (let i = start; i < start + qty; i++) {
 			let grpCode = i + (selArray.includes(`${i - start}`) ? 0x40 : 0);
-			routingCmds.push(new Buffer([ 0xB0, 0x63, ch, 0xB0, 0x62, 0x40, 0xB0, 0x06, grpCode]));
+			routingCmds.push(new Buffer([ 0xB0, 0x63, ch + chOfs, 0xB0, 0x62, 0x40, 0xB0, 0x06, grpCode]));
 		}
 		
 		return routingCmds;
