@@ -1,7 +1,7 @@
 /**
  * 
  * Companion instance class for the A&H dLive & iLive.
- * @version 1.3.0
+ * @version 1.3.1
  * 
  */
 

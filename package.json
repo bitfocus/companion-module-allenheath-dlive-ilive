@@ -1,6 +1,6 @@
 {
-	"name": "allenheath-dlive-ilive",
-	"version": "1.3.0",
+	"name": "allenheath-dlive",
+	"version": "1.3.1",
 	"api_version": "1.0.0",
 	"keywords": ["dLive","ilive"],
 	"manufacturer": "Allen & Heath",

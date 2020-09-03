@@ -52,7 +52,8 @@ module.exports = {
 				label:   name,
 				id:      'strip',
 				default: 1 + ofs,
-				choices: this.CHOICES
+				choices: this.CHOICES,
+				minChoicesForSearch: 0
 			},{
 				type:    'checkbox',
 				label:   'Mute',
@@ -71,7 +72,8 @@ module.exports = {
 				label:   name,
 				id:      'strip',
 				default: 1 + ofs,
-				choices: this.CHOICES
+				choices: this.CHOICES,
+				minChoicesForSearch: 0
 			},{
 				type:    'checkbox',
 				label:   'Phantom',
@@ -90,7 +92,8 @@ module.exports = {
 				label:   name,
 				id:      'strip',
 				default: 1 + ofs,
-				choices: this.CHOICES
+				choices: this.CHOICES,
+				minChoicesForSearch: 0
 			},{
 				type:    'dropdown',
 				label:   'Level',
@@ -256,7 +259,8 @@ module.exports = {
 				label:   'Input Channel',
 				id:      'inputChannel',
 				default: '0',
-				choices: this.CHOICES_INPUT_CHANNEL
+				choices: this.CHOICES_INPUT_CHANNEL,
+				minChoicesForSearch: 0
 			},{
 				type:     'dropdown',
 				label:    'DCA',
@@ -276,7 +280,8 @@ module.exports = {
 					label:   'Input Channel',
 					id:      'inputChannel',
 					default: '0',
-					choices: this.CHOICES_INPUT_CHANNEL
+					choices: this.CHOICES_INPUT_CHANNEL,
+					minChoicesForSearch: 0
 				},{
 					type:     'dropdown',
 					label:    'MUTE',
@@ -321,7 +326,8 @@ module.exports = {
 				label:   'Scene Number',
 				id:      'sceneNumber',
 				default: '0',
-				choices: this.CHOICES_SCENES
+				choices: this.CHOICES_SCENES,
+				minChoicesForSearch: 0
 			}]
 		};
 

@@ -7,7 +7,7 @@ Controls the Allen & Heath dLive and iLive.
 
 * Mute Channel
 * Mute FX Buses
-* Mute Group
+* Mute Group (dLive only)
 * Mute DCA
 * Fader Levels
 * Mute Assign
@@ -16,7 +16,7 @@ Controls the Allen & Heath dLive and iLive.
 * Talkback On (dLive only)
 * Virtual SoundCheck mode (dLive only)
 
-> Current version: 1.3.0
+> Current version: 1.3.1
 
 Bugs, comments, suggestions, please visit:
 
