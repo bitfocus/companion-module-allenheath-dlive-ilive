@@ -99,7 +99,8 @@ module.exports = {
 				label:   'Level',
 				id:      'level',
 				default: 0,
-				choices: this.CHOICES_FADER
+				choices: this.CHOICES_FADER,
+				minChoicesForSearch: 0
 			}]
 		}
 
