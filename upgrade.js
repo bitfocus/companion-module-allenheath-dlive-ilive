@@ -5,6 +5,17 @@ module.exports = {
         console.log('Running upgrade script.');
         // this.config._configIdx = -1; // For Debugging upgradeScript only
 
+        // Upgrage 1.2.0 > 1.3.0 (adding iLive functions)
+        this.addUpgradeScript((config) => {
+            let changed = false;
+            if (config.model === undefined) {
+                config.model = 'dLive';
+                changed = true;
+            }
+
+            return changed;
+        })
+
         // Upgrade  1.0.x > 1.2.0
         this.addUpgradeScript((config, actions, releaseActions, feedbacks) => {
         
