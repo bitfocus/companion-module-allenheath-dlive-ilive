@@ -32,7 +32,8 @@ class instance extends instance_skel {
 		super(system, id, config);
 
 		Object.assign(this, {
-			...actions, ...upgrade
+			...actions,
+			...upgrade
 		});
 
 		this.addUpgradeScripts();
@@ -208,7 +209,7 @@ class instance extends instance_skel {
 				id:    'info',
 				width: 12,
 				label: 'Information',
-				value: 'dLive-iLive: This module is for the A&H dLive & iLive'
+				value: 'This module is for the Allen & Heath dLive & iLive'
 			},
 			{
 				type:    'textinput',
