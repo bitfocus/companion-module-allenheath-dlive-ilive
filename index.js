@@ -60,7 +60,7 @@ class instance extends instance_skel {
 		let chOfs = (this.config.model == 'dLive') ? 0 : 0x20;
 		for (let i = start; i < start + qty; i++) {
 			let grpCode = i + (selArray.includes(`${i - start}`) ? 0x40 : 0);
-			routingCmds.push(new Buffer([ 0xB0, 0x63, ch + chOfs, 0xB0, 0x62, 0x40, 0xB0, 0x06, grpCode]));
+			routingCmds.push(Buffer.from([ 0xB0, 0x63, ch + chOfs, 0xB0, 0x62, 0x40, 0xB0, 0x06, grpCode]));
 		}
 		
 		return routingCmds;
@@ -139,7 +139,7 @@ class instance extends instance_skel {
 				break;
 
 			case 'phantom':
-				cmd.buffers = [ new Buffer([ 0xF0, 0, 0, 0x1A, 0x50, 0x10, 0x01, 0, 0, 0x0C, strip, opt.phantom ? 0x7F : 0, 0xF7 ]) ];
+				cmd.buffers = [ Buffer.from([ 0xF0, 0, 0, 0x1A, 0x50, 0x10, 0x01, 0, 0, 0x0C, strip, opt.phantom ? 0x7F : 0, 0xF7 ]) ];
 				break;
 	
 			case 'dca_assign':
@@ -152,30 +152,30 @@ class instance extends instance_skel {
 
 			case 'scene_recall':
 				let sceneNumber = parseInt(opt.sceneNumber);
-				cmd.buffers = [ new Buffer([ 0xB0, 0, (sceneNumber >> 7) & 0x0F, 0xC0, sceneNumber & 0x7F ]) ]
+				cmd.buffers = [ Buffer.from([ 0xB0, 0, (sceneNumber >> 7) & 0x0F, 0xC0, sceneNumber & 0x7F ]) ]
 				break;
 
 			case 'talkback_on':
 				cmd = {
 					port: TCP,
-					buffers: [ new Buffer([ 0xF0, 0, 2, 0 ,0x4B, 0, 0x4A, 0x10, 0xE7, 0, 1, opt.on ? 1 : 0, 0xF7 ]) ]
+					buffers: [ Buffer.from([ 0xF0, 0, 2, 0 ,0x4B, 0, 0x4A, 0x10, 0xE7, 0, 1, opt.on ? 1 : 0, 0xF7 ]) ]
 				};
 				break;
 
 			case 'vsc':
 				cmd = {
 					port: TCP,
-					buffers:  [ new Buffer([ 0xF0, 0, 2, 0, 0x4B, 0, 0x4A, 0x10, 0x8A, 0, 1, opt.vscMode, 0xF7 ]) ]
+					buffers:  [ Buffer.from([ 0xF0, 0, 2, 0, 0x4B, 0, 0x4A, 0x10, 0x8A, 0, 1, opt.vscMode, 0xF7 ]) ]
 				};
 
 		}
 
 		if (cmd.buffers.length == 0) { // Mute or Fader Level actions
 			if (action.action.slice(0 ,4) == 'mute') {
-				cmd.buffers = [ new Buffer([ 0x90 + chOfs, strip, opt.mute ? 0x7f : 0x3f, 0x90 + chOfs, strip, 0 ]) ];
+				cmd.buffers = [ Buffer.from([ 0x90 + chOfs, strip, opt.mute ? 0x7f : 0x3f, 0x90 + chOfs, strip, 0 ]) ];
 			} else {
 				let faderLevel = parseInt(opt.level);
-				cmd.buffers = [ new Buffer([ 0xB0 + chOfs, 0x63, strip, 0x62, 0x17, 0x06, faderLevel ]) ];
+				cmd.buffers = [ Buffer.from([ 0xB0 + chOfs, 0x63, strip, 0x62, 0x17, 0x06, faderLevel ]) ];
 			}
 		}
 
