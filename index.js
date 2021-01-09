@@ -228,7 +228,7 @@ class instance extends instance_skel {
 				choices: [
 					{id: 'dLive', label: 'dLive'},
 					{id: 'iLive', label: 'iLive'},
-					{id: 'q16', label: 'q16'}]
+					{id: 'qu16', label: 'Qu-16'}]
 			}
 		]
 	}

@@ -202,10 +202,10 @@ module.exports = {
 				options: this.faderOptions('DCA', 24, 0x35)
 			}	
 	
-		} else if (this.config.model == 'q16') {
+		} else if (this.config.model == 'qu16') {
 			actions['mute_input'] = {
 				label: 'Mute Input',
-				options: this.muteOptions('Input Channel', 64, 0x1F)
+				options: this.muteOptions('Input Channel', 32, 0x1F)
 			};
 		} else { // Actions for iLive
 			actions['mute_input'] = {
