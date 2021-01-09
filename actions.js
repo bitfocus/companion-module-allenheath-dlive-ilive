@@ -1,3 +1,5 @@
+const { config } = require("chai");
+
 module.exports = {
 
 	/**
@@ -154,9 +156,7 @@ module.exports = {
 			actions['mute_dca'] = {
 				label: 'Mute DCA',
 				options: this.muteOptions('DCA', 24, 0x35)
-			};			
-	
-	
+			};
 			actions['fader_input'] = {
 				label: 'Set Input Fader to Level',
 				options: this.faderOptions('Channel', 128, -1)
@@ -202,6 +202,11 @@ module.exports = {
 				options: this.faderOptions('DCA', 24, 0x35)
 			}	
 	
+		} else if (this.config.model == 'q16') {
+			actions['mute_input'] = {
+				label: 'Mute Input',
+				options: this.muteOptions('Input Channel', 64, 0x1F)
+			};
 		} else { // Actions for iLive
 			actions['mute_input'] = {
 				label: 'Mute Input',
