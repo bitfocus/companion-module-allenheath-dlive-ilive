@@ -1,3 +1,5 @@
+const { config } = require("chai");
+
 module.exports = {
 
 	/**
@@ -114,27 +116,27 @@ module.exports = {
 			actions['mute_mono_group'] = {
 				label: 'Mute Mono Group',
 				options: this.muteOptions('Mono Group', 62, -1)
-			}
+			};
 			actions['mute_stereo_group'] = {
 				label: 'Mute Stereo Group',
 				options: this.muteOptions('Stereo Group', 31, 0x3F)
-			}
+			};
 			actions['mute_mono_aux'] = {
 				label: 'Mute Mono Aux',
 				options: this.muteOptions('Mono Aux', 62, -1)
-			}
+			};
 			actions['mute_stereo_aux'] = {
 				label: 'Mute Stereo Aux',
 				options: this.muteOptions('Stereo Aux', 31, 0x3F)
-			}
+			};
 			actions['mute_mono_matrix'] = {
 				label: 'Mute Mono Matrix',
 				options: this.muteOptions('Mono Matrix', 62, -1)
-			}
+			};
 			actions['mute_stereo_matrix'] = {
 				label: 'Mute Stereo Matrix',
 				options: this.muteOptions('Stereo Matrix', 31, 0x3F)
-			}	
+			};	
 			actions['mute_mono_fx_send'] = {
 				label: 'Mute Mono FX Send',
 				options: this.muteOptions('Mono FX Send', 16, -1)
@@ -158,53 +160,48 @@ module.exports = {
 			actions['fader_input'] = {
 				label: 'Set Input Fader to Level',
 				options: this.faderOptions('Channel', 128, -1)
-			}
+			};
 			actions['fader_mono_group'] = {
 				label: 'Set Mono Group Master Fader to Level',
 				options: this.faderOptions('Mono Group', 62, -1)
-			}
+			};
 			actions['fader_stereo_group'] = {
 				label: 'Set Stereo Group Master Fader to Level',
 				options: this.faderOptions('Stereo Group', 31, 0x3F)
-			}
+			};
 			actions['fader_mono_aux'] = {
 				label: 'Set Mono Aux Master Fader to Level',
 				options: this.faderOptions('Mono Aux', 62, -1)
-			}
+			};
 			actions['fader_stereo_aux'] = {
 				label: 'Set Stereo Aux Master Fader to Level',
 				options: this.faderOptions('Stereo Aux', 31, 0x3F)
-			}
+			};
 			actions['fader_mono_matrix'] = {
 				label: 'Set Mono Matrix Master Fader to Level',
 				options: this.faderOptions('Mono Matrix', 62, -1)
-			}
+			};
 			actions['fader_stereo_matrix'] = {
 				label: 'Set Stereo Matrix Master Fader to Level',
 				options: this.faderOptions('Stereo Matrix', 31, 0x3F)
-			}		
+			};		
 			actions['fader_mono_fx_send'] = {
 				label: 'Set Mono FX Send Master Fader to Level',
 				options: this.faderOptions('Mono FX Send', 16, -1)
-			}
+			};
 			actions['fader_stereo_fx_send'] = {
 				label: 'Set Stereo FX Send Master Fader to Level',
 				options: this.faderOptions('Stereo FX Send', 16, 0x0F)
-			}
+			};
 			actions['fader_fx_return'] = {
 				label: 'Set FX Return Fader to Level',
 				options: this.faderOptions('FX Return', 16, 0x1F)
-			}
+			};
 			actions['fader_DCA'] = {
 				label: 'Set DCA Fader to Level',
 				options: this.faderOptions('DCA', 24, 0x35)
-			}	
+			};	
 	
-		} else if (this.config.model == 'qu16') {
-			actions['mute_input'] = {
-				label: 'Mute Input',
-				options: this.muteOptions('Input Channel', 32, 0x1F)
-			};
 		} else { // Actions for iLive
 			actions['mute_input'] = {
 				label: 'Mute Input',
@@ -230,30 +227,31 @@ module.exports = {
 			actions['fader_input'] = {
 				label: 'Set Input Fader to Level',
 				options: this.faderOptions('Channel', 64, 0x1F)
-			}
+			};
 			actions['fader_mix'] = {
 				label: 'Set Mix Fader to Level',
 				options: this.faderOptions('Mix', 32, 0x5F)
-			}
+			};
 			actions['fader_mono_fx_send'] = {
 				label: 'Set FX Send Master Fader to Level',
 				options: this.faderOptions('FX Send', 8, -1)
-			}	
+			};
 			actions['fader_fx_return'] = {
 				label: 'Set FX Return Fader to Level',
 				options: this.faderOptions('FX Return', 8, 0x07)
-			}
+			};
 			actions['fader_DCA'] = {
 				label: 'Set DCA Fader to Level',
 				options: this.faderOptions('DCA', 16, 0x0F)
-			}	
+			};
 
 		}
 	
+		// Actions for all products
 		actions['phantom'] = {
 			label: 'Toggle 48v Phantom on Preamp',
 			options: this.phantomOptions('Preamp', this.chCount, -1)
-		}
+		};
 
 
 		actions['dca_assign'] = {

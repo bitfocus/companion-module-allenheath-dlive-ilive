@@ -1,7 +1,7 @@
 /**
  * 
- * Companion instance class for the A&H dLive & iLive.
- * @version 1.3.1
+ * Companion instance class for the A&H dLive & iLive Mixers.
+ * @version 1.3.4
  * 
  */
 
@@ -209,7 +209,7 @@ class instance extends instance_skel {
 				id:    'info',
 				width: 12,
 				label: 'Information',
-				value: 'This module is for the Allen & Heath dLive & iLive'
+				value: 'This module is for the Allen & Heath dLive and iLive mixers'
 			},
 			{
 				type:    'textinput',
@@ -227,8 +227,7 @@ class instance extends instance_skel {
 				default: 'dLive',
 				choices: [
 					{id: 'dLive', label: 'dLive'},
-					{id: 'iLive', label: 'iLive'},
-					{id: 'qu16', label: 'Qu-16'}]
+					{id: 'iLive', label: 'iLive'}]
 			}
 		]
 	}

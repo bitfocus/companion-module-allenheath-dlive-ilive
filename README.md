@@ -1,4 +1,4 @@
-# companion-module-allenheath-dlive
+# companion-module-allenheath-dlive-ilive
 
 See [HELP.md](HELP.md) and [LICENSE](LICENSE) for more information about this module.
 
@@ -8,4 +8,4 @@ via MIDI and TCP (dLive only) commands over IP
 Modified by Andrew Broughton in 2020 from original dLive module. 
 iLive functions by Matt Andrewartha
 
-Current Version 1.3.2
+Current Version 1.3.4

@@ -1,6 +1,6 @@
 # Allen & Heath dLive & iLive module
 
-Controls the Allen & Heath dLive and iLive.
+Controls the Allen & Heath dLive, iLive & QU Mixers.
 
 ## Functions:
 
@@ -16,7 +16,7 @@ Controls the Allen & Heath dLive and iLive.
 * Talkback On *(dLive only)*
 * Virtual SoundCheck mode *(dLive only)*
 
-> Current version: 1.3.1
+> Current version: 1.3.4
 
 Bugs, comments, suggestions, please visit:
 
