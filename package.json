@@ -1,8 +1,9 @@
 {
-	"name": "allenheath-dlive",
-	"version": "1.3.4",
+	"name": "allenheath-dlive-ilive",
+	"legacy": ["allenheath-dlive"],
+	"version": "1.3.5",
 	"api_version": "1.0.0",
-	"keywords": ["dLive","ilive"],
+	"keywords": ["Audio", "Sound"],
 	"manufacturer": "Allen & Heath",
 	"product": ["dLive","ilive"],
 	"shortname": "dLive-ilive",
