@@ -8,7 +8,7 @@
 let tcp = require('../../tcp')
 let instance_skel = require('../../instance_skel')
 let actions = require('./actions')
-let upgrade = require('./upgrade')
+let upgradeScripts = require('./upgrade')
 const MIDI = 51325
 const TCP = 51321
 
@@ -32,10 +32,13 @@ class instance extends instance_skel {
 
 		Object.assign(this, {
 			...actions,
-			...upgrade,
 		})
 
 		this.addUpgradeScripts()
+	}
+
+	static GetUpgradeScripts() {
+		return upgradeScripts
 	}
 
 	/**
