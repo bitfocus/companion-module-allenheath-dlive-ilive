@@ -33,8 +33,6 @@ class instance extends instance_skel {
 		Object.assign(this, {
 			...actions,
 		})
-
-		this.addUpgradeScripts()
 	}
 
 	static GetUpgradeScripts() {
