@@ -16,7 +16,3 @@ Controls the Allen & Heath dLive and iLive Mixers.
 - Virtual SoundCheck mode _(dLive only)_
 
 > Current version: 1.3.5
-
-Bugs, comments, suggestions, please visit:
-
-http://www.checkcheckonetwo.com
