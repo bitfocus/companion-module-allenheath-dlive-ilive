@@ -15,7 +15,6 @@ const TCP = 51321
 /**
  * @extends instance_skel
  * @since 1.2.0
- * @author Andrew Broughton <andy@checkcheckonetwo.com>
  */
 
 class instance extends instance_skel {
