@@ -9,3 +9,5 @@ Modified by Andrew Broughton in 2020 from original dLive module.
 iLive functions by Matt Andrewartha
 
 Current Version 1.3.4
+
+N.B. as of 2025, I (Andrew Broughton) no longer maintain or supports this module. (I no longer own a dLive product)
