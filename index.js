@@ -11,6 +11,38 @@ let actions = require('./actions')
 let upgradeScripts = require('./upgrade')
 const MIDI = 51325
 const TCP = 51321
+const net = require('net');
+
+setupTcpMidi() {
+  if (!this.config.tcpMidiEnabled) return;
+  this.tcpReconnDelay = 1000;
+  this.connectTcpMidi();
+}
+
+connectTcpMidi() {
+  this.tcpSocket = new net.Socket();
+  this.tcpSocket.connect(this.config.tcpMidiPort || 51325, this.config.host, () => {
+    this.updateStatus(InstanceStatus.Ok, 'tcp midi connected');
+    this.tcpReconnDelay = 1000;
+  });
+  this.tcpSocket.on('data', (chunk) => this.onTcpMidiData(chunk));
+  ['error','close'].forEach(evt =>
+    this.tcpSocket.on(evt, () => {
+      this.updateStatus(InstanceStatus.Disconnected, 'tcp midi reconnecting');
+      setTimeout(() => this.connectTcpMidi(), this.tcpReconnDelay *= 2);
+    }));
+}
+
+onTcpMidiData(chunk) {
+  for (let i = 0; i < chunk.length; i += 3) {
+    const [status, note, velocity] = chunk.slice(i, i+3);
+    if ((status & 0xF0) === 0x90 && velocity > 0) {
+      this.lastNote = note;
+      this.setVariableValues({tcp_midi_note: note});
+      this.checkFeedbacks('tcpMidiNote');
+    }
+  }
+}
 
 /**
  * @extends instance_skel
