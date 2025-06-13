@@ -257,6 +257,19 @@ class instance extends instance_skel {
 					{ id: 'iLive', label: 'iLive' },
 				],
 			},
+			{
+  				type: 'checkbox',
+  				id: 'tcpMidiEnabled',
+  				label: 'Enable incoming TCP MIDI',
+  				default: false
+			},
+			{
+				type: 'number',
+ 				id: 'tcpMidiPort',
+				label: 'TCP MIDI Port',
+				default: 51325,
+				required: true
+			}
 		]
 	}
 
@@ -274,7 +287,9 @@ class instance extends instance_skel {
 		if (this.midiSocket !== undefined) {
 			this.midiSocket.destroy()
 		}
-
+		
+		if (this.tcpSocket) this.tcpSocket.destroy();
+		
 		this.log('debug', `destroyed ${this.id}`)
 	}
 
@@ -339,6 +354,12 @@ class instance extends instance_skel {
 		}
 	}
 
+	initVariables() {
+	 this.variables = [
+	   { variableId: 'tcp_midi_note', name: 'Latest TCP MIDI Note' }
+	 ];
+	}
+	
 	/**
 	 * Process an updated configuration array.
 	 *
