@@ -1,351 +1,752 @@
+// actions.js - Actions for dLive module
+
+function getActions(instance) {
+	const actions = {}
+
+	// Input Channel Actions
+	actions.muteInputChannel = {
+		name: 'Mute Input Channel',
+		options: [
+			{
+				type: 'number',
+				label: 'Input Channel',
+				id: 'channel',
+				default: 1,
+				min: 1,
+				max: 128,
+				required: true
+			},
+			{
+				type: 'dropdown',
+				label: 'Action',
+				id: 'mute',
+				default: 'toggle',
+				choices: [
+					{ id: 'on', label: 'Mute' },
+					{ id: 'off', label: 'Unmute' },
+					{ id: 'toggle', label: 'Toggle' }
+				]
+			}
+		],
+		callback: async (action) => {
+			const channel = parseInt(action.options.channel) - 1 // Convert to 0-based
+			let isMuted
+			
+			if (action.options.mute === 'toggle') {
+				// Get current state from variable
+				const currentState = instance.getVariableValue(`mute_input_${channel + 1}`)
+				isMuted = currentState !== 'ON'
+			} else {
+				isMuted = action.options.mute === 'on'
+			}
+			
+			const command = instance.createMuteCommand(channel, isMuted, 'input')
+			instance.sendMidiCommand(command, 'mixrack')
+		}
+	}
+
+	actions.inputChannelFader = {
+		name: 'Input Channel Fader',
+		options: [
+			{
+				type: 'number',
+				label: 'Input Channel',
+				id: 'channel',
+				default: 1,
+				min: 1,
+				max: 128,
+				required: true
+			},
+			{
+				type: 'number',
+				label: 'Level (0-127)',
+				id: 'level',
+				default: 107, // Approximately 0dB
+				min: 0,
+				max: 127,
+				required: true,
+				tooltip: '0 = -∞, 107 ≈ 0dB, 127 = +10dB'
+			}
+		],
+		callback: async (action) => {
+			const channel = parseInt(action.options.channel) - 1 // Convert to 0-based
+			const level = parseInt(action.options.level)
+			
+			const command = instance.createFaderCommand(channel, level, 'input')
+			instance.sendMidiCommand(command, 'mixrack')
+		}
+	}
+
+	// DCA Actions
+	actions.muteDCA = {
+		name: 'Mute DCA',
+		options: [
+			{
+				type: 'number',
+				label: 'DCA Number',
+				id: 'dca',
+				default: 1,
+				min: 1,
+				max: instance.dcaCount,
+				required: true
+			},
+			{
+				type: 'dropdown',
+				label: 'Action',
+				id: 'mute',
+				default: 'toggle',
+				choices: [
+					{ id: 'on', label: 'Mute' },
+					{ id: 'off', label: 'Unmute' },
+					{ id: 'toggle', label: 'Toggle' }
+				]
+			}
+		],
+		callback: async (action) => {
+			const dcaNumber = parseInt(action.options.dca) - 1 // Convert to 0-based
+			let isMuted
+			
+			if (action.options.mute === 'toggle') {
+				const currentState = instance.getVariableValue(`mute_dca_${dcaNumber + 1}`)
+				isMuted = currentState !== 'ON'
+			} else {
+				isMuted = action.options.mute === 'on'
+			}
+			
+			const command = instance.createMuteCommand(dcaNumber, isMuted, 'dca')
+			instance.sendMidiCommand(command, 'mixrack')
+		}
+	}
+
+	actions.dcaFader = {
+		name: 'DCA Fader',
+		options: [
+			{
+				type: 'number',
+				label: 'DCA Number',
+				id: 'dca',
+				default: 1,
+				min: 1,
+				max: instance.dcaCount,
+				required: true
+			},
+			{
+				type: 'number',
+				label: 'Level (0-127)',
+				id: 'level',
+				default: 107,
+				min: 0,
+				max: 127,
+				required: true
+			}
+		],
+		callback: async (action) => {
+			const dcaNumber = parseInt(action.options.dca) - 1
+			const level = parseInt(action.options.level)
+			
+			const command = instance.createFaderCommand(dcaNumber, level, 'dca')
+			instance.sendMidiCommand(command, 'mixrack')
+		}
+	}
+
+	actions.assignToDCA = {
+		name: 'Assign Channel to DCA',
+		options: [
+			{
+				type: 'number',
+				label: 'Input Channel',
+				id: 'channel',
+				default: 1,
+				min: 1,
+				max: 128,
+				required: true
+			},
+			{
+				type: 'number',
+				label: 'DCA Number',
+				id: 'dca',
+				default: 1,
+				min: 1,
+				max: instance.dcaCount,
+				required: true
+			},
+			{
+				type: 'dropdown',
+				label: 'Action',
+				id: 'assign',
+				default: 'toggle',
+				choices: [
+					{ id: 'on', label: 'Assign' },
+					{ id: 'off', label: 'Unassign' },
+					{ id: 'toggle', label: 'Toggle' }
+				]
+			}
+		],
+		callback: async (action) => {
+			const channel = parseInt(action.options.channel) - 1
+			const dcaNumber = parseInt(action.options.dca)
+			let assign
+			
+			if (action.options.assign === 'toggle') {
+				const currentState = instance.getVariableValue(`dca_assign_ch${channel}_dca${dcaNumber}`)
+				assign = currentState !== 'ON'
+			} else {
+				assign = action.options.assign === 'on'
+			}
+			
+			const command = instance.createDCAAssignCommand(channel, dcaNumber, assign)
+			instance.sendMidiCommand(command, 'mixrack')
+		}
+	}
+
+	// Mix Bus Actions
+	actions.muteMixBus = {
+		name: 'Mute Mix Bus',
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Mix Bus Type',
+				id: 'busType',
+				default: 'aux',
+				choices: [
+					{ id: 'aux', label: 'Aux Bus' },
+					{ id: 'group', label: 'Group' },
+					{ id: 'matrix', label: 'Matrix' }
+				]
+			},
+			{
+				type: 'dropdown',
+				label: 'Channel Type',
+				id: 'channelType',
+				default: 'mono',
+				choices: [
+					{ id: 'mono', label: 'Mono' },
+					{ id: 'stereo', label: 'Stereo' }
+				]
+			},
+			{
+				type: 'number',
+				label: 'Channel Number',
+				id: 'channel',
+				default: 1,
+				min: 1,
+				max: 62,
+				required: true
+			},
+			{
+				type: 'dropdown',
+				label: 'Action',
+				id: 'mute',
+				default: 'toggle',
+				choices: [
+					{ id: 'on', label: 'Mute' },
+					{ id: 'off', label: 'Unmute' },
+					{ id: 'toggle', label: 'Toggle' }
+				]
+			}
+		],
+		callback: async (action) => {
+			const channel = parseInt(action.options.channel) - 1
+			const busType = action.options.busType
+			const channelType = action.options.channelType
+			let isMuted
+			
+			// Calculate note offset for stereo channels
+			let note = channel
+			if (channelType === 'stereo') {
+				note = 0x40 + channel
+			}
+			
+			if (action.options.mute === 'toggle') {
+				const variableId = `mute_${channelType}_${busType}_${channel + 1}`
+				const currentState = instance.getVariableValue(variableId)
+				isMuted = currentState !== 'ON'
+			} else {
+				isMuted = action.options.mute === 'on'
+			}
+			
+			const command = instance.createMuteCommand(note, isMuted, busType)
+			instance.sendMidiCommand(command, 'mixrack')
+		}
+	}
+
+	// Scene Management
+	actions.recallScene = {
+		name: 'Recall Scene',
+		options: [
+			{
+				type: 'number',
+				label: 'Scene Number',
+				id: 'scene',
+				default: 1,
+				min: 1,
+				max: 500,
+				required: true
+			}
+		],
+		callback: async (action) => {
+			const sceneNumber = parseInt(action.options.scene)
+			const command = instance.createSceneRecallCommand(sceneNumber)
+			instance.sendMidiCommand(command, 'mixrack')
+		}
+	}
+
+	// Preamp Control
+	actions.preampPhantom = {
+		name: 'Preamp Phantom Power',
+		options: [
+			{
+				type: 'number',
+				label: 'Socket Number',
+				id: 'socket',
+				default: 1,
+				min: 1,
+				max: 128,
+				required: true
+			},
+			{
+				type: 'dropdown',
+				label: 'Action',
+				id: 'phantom',
+				default: 'toggle',
+				choices: [
+					{ id: 'on', label: 'On' },
+					{ id: 'off', label: 'Off' },
+					{ id: 'toggle', label: 'Toggle' }
+				]
+			}
+		],
+		callback: async (action) => {
+			const socket = parseInt(action.options.socket) - 1
+			let phantomOn
+			
+			if (action.options.phantom === 'toggle') {
+				const currentState = instance.getVariableValue(`preamp_phantom_socket${socket + 1}`)
+				phantomOn = currentState !== 'ON'
+			} else {
+				phantomOn = action.options.phantom === 'on'
+			}
+			
+			// Create dLive SysEx message for phantom power
+			const phantomValue = phantomOn ? 0x7F : 0x00
+			const sysexCommand = Buffer.from([
+				0xF0, 0x00, 0x00, 0x1A, 0x50, 0x10, 0x01, 0x00, // dLive SysEx header
+				0x0C, socket, phantomValue, 0xF7
+			])
+			
+			instance.sendMidiCommand(sysexCommand, 'mixrack')
+		}
+	}
+
+	actions.preampGain = {
+		name: 'Preamp Gain',
+		options: [
+			{
+				type: 'number',
+				label: 'Socket Number',
+				id: 'socket',
+				default: 1,
+				min: 1,
+				max: 128,
+				required: true
+			},
+			{
+				type: 'number',
+				label: 'Gain (0-127)',
+				id: 'gain',
+				default: 64,
+				min: 0,
+				max: 127,
+				required: true,
+				tooltip: 'MIDI value representing gain range'
+			}
+		],
+		callback: async (action) => {
+			const socket = parseInt(action.options.socket) - 1
+			const gain = parseInt(action.options.gain)
+			
+			// Pitch bend message for preamp gain
+			const pitchBendCommand = Buffer.from([
+				0xE0 + instance.baseMidiChannel, socket, gain
+			])
+			
+			instance.sendMidiCommand(pitchBendCommand, 'mixrack')
+		}
+	}
+
+	// Channel Naming
+	actions.setChannelName = {
+		name: 'Set Channel Name',
+		options: [
+			{
+				type: 'number',
+				label: 'Channel Number',
+				id: 'channel',
+				default: 1,
+				min: 1,
+				max: 128,
+				required: true
+			},
+			{
+				type: 'textinput',
+				label: 'Channel Name',
+				id: 'name',
+				default: '',
+				required: true
+			}
+		],
+		callback: async (action) => {
+			const channel = parseInt(action.options.channel) - 1
+			const name = action.options.name.toString()
+			
+			// Convert name to ASCII bytes
+			const nameBytes = Buffer.from(name, 'ascii')
+			
+			// Create dLive SysEx message for channel name
+			const sysexCommand = Buffer.concat([
+				Buffer.from([0xF0, 0x00, 0x00, 0x1A, 0x50, 0x10, 0x01, 0x00]), // dLive SysEx header
+				Buffer.from([0x03, channel]), // Name command + channel
+				nameBytes,
+				Buffer.from([0xF7]) // SysEx terminator
+			])
+			
+			instance.sendMidiCommand(sysexCommand, 'mixrack')
+		}
+	}
+
+	// UFX Controls
+	actions.setUFXKey = {
+		name: 'Set UFX Global Key',
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Key',
+				id: 'key',
+				default: 0,
+				choices: [
+					{ id: 0, label: 'C' },
+					{ id: 1, label: 'C#' },
+					{ id: 2, label: 'D' },
+					{ id: 3, label: 'D#' },
+					{ id: 4, label: 'E' },
+					{ id: 5, label: 'F' },
+					{ id: 6, label: 'F#' },
+					{ id: 7, label: 'G' },
+					{ id: 8, label: 'G#' },
+					{ id: 9, label: 'A' },
+					{ id: 10, label: 'A#' },
+					{ id: 11, label: 'B' }
+				]
+			}
+		],
+		callback: async (action) => {
+			const key = parseInt(action.options.key)
+			
+			// Control Change message for UFX Global Key
+			const ccCommand = Buffer.from([
+				0xB0 + instance.baseMidiChannel, 0x0C, key
+			])
+			
+			instance.sendMidiCommand(ccCommand, 'mixrack')
+		}
+	}
+
+	actions.setUFXScale = {
+		name: 'Set UFX Global Scale',
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Scale',
+				id: 'scale',
+				default: 0,
+				choices: [
+					{ id: 0, label: 'Major' },
+					{ id: 1, label: 'Minor' }
+				]
+			}
+		],
+		callback: async (action) => {
+			const scale = parseInt(action.options.scale)
+			
+			// Control Change message for UFX Global Scale
+			const ccCommand = Buffer.from([
+				0xB0 + instance.baseMidiChannel, 0x0D, scale
+			])
+			
+			instance.sendMidiCommand(ccCommand, 'mixrack')
+		}
+	}
+
+	// dLive-specific TCP commands (if legacy TCP is enabled)
+	if (instance.config.enableLegacyTcp) {
+		actions.talkback = {
+			name: 'Talkback On/Off',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Action',
+					id: 'talkback',
+					default: 'toggle',
+					choices: [
+						{ id: 'on', label: 'On' },
+						{ id: 'off', label: 'Off' },
+						{ id: 'toggle', label: 'Toggle' }
+					]
+				}
+			],
+			callback: async (action) => {
+				let command
+				
+				if (action.options.talkback === 'toggle') {
+					// Simple toggle command
+					command = 'TALKBACK TOGGLE'
+				} else {
+					command = action.options.talkback === 'on' ? 'TALKBACK ON' : 'TALKBACK OFF'
+				}
+				
+				instance.sendTcpCommand(command)
+			}
+		}
+
+		actions.vsc = {
+			name: 'Virtual Sound Check',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Action',
+					id: 'vsc',
+					default: 'toggle',
+					choices: [
+						{ id: 'on', label: 'On' },
+						{ id: 'off', label: 'Off' },
+						{ id: 'toggle', label: 'Toggle' }
+					]
+				}
+			],
+			callback: async (action) => {
+				let command
+				
+				if (action.options.vsc === 'toggle') {
+					command = 'VSC TOGGLE'
+				} else {
+					command = action.options.vsc === 'on' ? 'VSC ON' : 'VSC OFF'
+				}
+				
+				instance.sendTcpCommand(command)
+			}
+		}
+	}
+
+	// Surface-specific actions (if surface connected)
+	if (instance.config.connectToSurface) {
+		actions.recallCue = {
+			name: 'Recall Cue (Surface)',
+			options: [
+				{
+					type: 'number',
+					label: 'Cue ID',
+					id: 'cueId',
+					default: 1,
+					min: 0,
+					max: 1999,
+					required: true,
+					tooltip: 'Cue list recall ID (0-1999)'
+				}
+			],
+			callback: async (action) => {
+				const cueId = parseInt(action.options.cueId)
+				const bank = Math.floor(cueId / 128)
+				const cue = cueId % 128
+				
+				const command = Buffer.from([
+					0xB0 + instance.baseMidiChannel, 0x00, bank,
+					0xC0 + instance.baseMidiChannel, cue
+				])
+				
+				instance.sendMidiCommand(command, 'surface')
+			}
+		}
+
+		actions.goNext = {
+			name: 'Go/Next Scene (Surface)',
+			options: [
+				{
+					type: 'number',
+					label: 'Control Number',
+					id: 'ccNumber',
+					default: 80,
+					min: 0,
+					max: 127,
+					tooltip: 'MIDI CC number configured in dLive for Go/Next'
+				}
+			],
+			callback: async (action) => {
+				const ccNumber = parseInt(action.options.ccNumber)
+				
+				const command = Buffer.from([
+					0xB0 + instance.baseMidiChannel, ccNumber, 127
+				])
+				
+				instance.sendMidiCommand(command, 'surface')
+			}
+		}
+
+		actions.goPrevious = {
+			name: 'Go/Previous Scene (Surface)',
+			options: [
+				{
+					type: 'number',
+					label: 'Control Number',
+					id: 'ccNumber',
+					default: 81,
+					min: 0,
+					max: 127,
+					tooltip: 'MIDI CC number configured in dLive for Go/Previous'
+				}
+			],
+			callback: async (action) => {
+				const ccNumber = parseInt(action.options.ccNumber)
+				
+				const command = Buffer.from([
+					0xB0 + instance.baseMidiChannel, ccNumber, 127
+				])
+				
+				instance.sendMidiCommand(command, 'surface')
+			}
+		}
+	}
+
+	// Generic MIDI Actions
+	actions.sendCustomMidi = {
+		name: 'Send Custom MIDI',
+		options: [
+			{
+				type: 'textinput',
+				label: 'MIDI Hex Data',
+				id: 'midiData',
+				default: '90 00 7F',
+				required: true,
+				tooltip: 'Space-separated hex bytes (e.g., "90 00 7F" for Note On)'
+			},
+			{
+				type: 'dropdown',
+				label: 'Target',
+				id: 'target',
+				default: 'mixrack',
+				choices: [
+					{ id: 'mixrack', label: 'MixRack' },
+					{ id: 'surface', label: 'Surface' }
+				]
+			}
+		],
+		callback: async (action) => {
+			try {
+				const hexData = action.options.midiData.trim()
+				const bytes = hexData.split(/\s+/).map(hex => parseInt(hex, 16))
+				
+				if (bytes.some(byte => isNaN(byte) || byte < 0 || byte > 255)) {
+					instance.log('error', 'Invalid MIDI hex data')
+					return
+				}
+				
+				const command = Buffer.from(bytes)
+				instance.sendMidiCommand(command, action.options.target)
+				
+			} catch (error) {
+				instance.log('error', `Failed to parse MIDI data: ${error.message}`)
+			}
+		}
+	}
+
+	// Request Status Actions
+	actions.requestMuteStatus = {
+		name: 'Request Mute Status',
+		options: [
+			{
+				type: 'dropdown',
+				label: 'Channel Type',
+				id: 'channelType',
+				default: 'input',
+				choices: [
+					{ id: 'input', label: 'Input' },
+					{ id: 'dca', label: 'DCA' },
+					{ id: 'group', label: 'Group' },
+					{ id: 'aux', label: 'Aux' }
+				]
+			},
+			{
+				type: 'number',
+				label: 'Channel Number',
+				id: 'channel',
+				default: 1,
+				min: 1,
+				max: 128,
+				required: true
+			}
+		],
+		callback: async (action) => {
+			const channelType = action.options.channelType
+			const channel = parseInt(action.options.channel) - 1
+			
+			// Calculate MIDI channel and note based on channel type
+			let midiChannel = instance.baseMidiChannel
+			let note = channel
+			
+			switch (channelType) {
+				case 'input':
+					midiChannel = instance.baseMidiChannel
+					break
+				case 'group':
+					midiChannel = instance.baseMidiChannel + 1
+					break
+				case 'aux':
+					midiChannel = instance.baseMidiChannel + 2
+					break
+				case 'dca':
+					midiChannel = instance.baseMidiChannel + 4
+					note = 0x36 + channel
+					break
+			}
+			
+			// SysEx message to request mute status
+			const sysexCommand = Buffer.from([
+				0xF0, 0x00, 0x00, 0x1A, 0x50, 0x10, 0x01, 0x00, // dLive SysEx header
+				midiChannel, 0x05, 0x09, note, 0xF7
+			])
+			
+			instance.sendMidiCommand(sysexCommand, 'mixrack')
+		}
+	}
+
+	actions.requestChannelName = {
+		name: 'Request Channel Name',
+		options: [
+			{
+				type: 'number',
+				label: 'Channel Number',
+				id: 'channel',
+				default: 1,
+				min: 1,
+				max: 128,
+				required: true
+			}
+		],
+		callback: async (action) => {
+			const channel = parseInt(action.options.channel) - 1
+			
+			// SysEx message to request channel name
+			const sysexCommand = Buffer.from([
+				0xF0, 0x00, 0x00, 0x1A, 0x50, 0x10, 0x01, 0x00, // dLive SysEx header
+				0x01, channel, 0xF7
+			])
+			
+			instance.sendMidiCommand(sysexCommand, 'mixrack')
+		}
+	}
+
+	return actions
+}
+
 module.exports = {
-	/**
-	 * Get the available actions.
-	 *
-	 * @returns {Object[]} the available actions
-	 * @access public
-	 * @since 1.2.0
-	 */
-
-	getActions() {
-		this.chCount = this.config.model == 'dLive' ? 128 : 64
-		this.dcaCount = this.config.model == 'dLive' ? 24 : 16
-		this.sceneCount = this.config.model == 'dLive' ? 500 : 250
-
-		let actions = {}
-
-		this.CHOICES_INPUT_CHANNEL = []
-		for (let i = 0; i < this.chCount; i++) {
-			this.CHOICES_INPUT_CHANNEL.push({ label: `CH ${i + 1}`, id: i })
-		}
-
-		this.CHOICES_SCENES = []
-		for (let i = 0; i < this.sceneCount; i++) {
-			this.CHOICES_SCENES.push({ label: `SCENE ${i + 1}`, id: i })
-		}
-
-		this.CHOICES_DCA = []
-		for (let i = 0; i < this.dcaCount; i++) {
-			this.CHOICES_DCA.push({ label: `DCA ${i + 1}`, id: i })
-		}
-
-		this.CHOICES_MUTE = []
-		for (let i = 0; i < 8; i++) {
-			this.CHOICES_MUTE.push({ label: `MUTE ${i + 1}`, id: i })
-		}
-
-		this.CHOICES_FADER = []
-		for (let i = 0; i < 128; i++) {
-			let dbVal = ((i - 107) / 2).toFixed(1)
-			let dbStr = i == 0 ? '-INF' : dbVal == 0 ? dbVal : dbVal > 0 ? `+${dbVal}` : `-${dbVal}`
-			this.CHOICES_FADER.push({ label: `${dbStr} dB`, id: i })
-		}
-
-		this.muteOptions = (name, qty, ofs) => {
-			this.CHOICES = []
-			for (let i = 1; i <= qty; i++) {
-				this.CHOICES.push({ label: `${name} ${i}`, id: i + ofs })
-			}
-			return [
-				{
-					type: 'dropdown',
-					label: name,
-					id: 'strip',
-					default: 1 + ofs,
-					choices: this.CHOICES,
-					minChoicesForSearch: 0,
-				},
-				{
-					type: 'checkbox',
-					label: 'Mute',
-					id: 'mute',
-					default: true,
-				},
-			]
-		}
-
-		this.phantomOptions = (name, qty, ofs) => {
-			this.CHOICES = []
-			for (let i = 1; i <= qty; i++) {
-				this.CHOICES.push({ label: `${name} ${i}`, id: i + ofs })
-			}
-			return [
-				{
-					type: 'dropdown',
-					label: name,
-					id: 'strip',
-					default: 1 + ofs,
-					choices: this.CHOICES,
-					minChoicesForSearch: 0,
-				},
-				{
-					type: 'checkbox',
-					label: 'Phantom',
-					id: 'phantom',
-					default: true,
-				},
-			]
-		}
-
-		this.faderOptions = (name, qty, ofs) => {
-			this.CHOICES = []
-			for (let i = 1; i <= qty; i++) {
-				this.CHOICES.push({ label: `${name} ${i}`, id: i + ofs })
-			}
-			return [
-				{
-					type: 'dropdown',
-					label: name,
-					id: 'strip',
-					default: 1 + ofs,
-					choices: this.CHOICES,
-					minChoicesForSearch: 0,
-				},
-				{
-					type: 'dropdown',
-					label: 'Level',
-					id: 'level',
-					default: 0,
-					choices: this.CHOICES_FADER,
-					minChoicesForSearch: 0,
-				},
-			]
-		}
-
-		// Actions for dLive
-		if (this.config.model == 'dLive') {
-			actions['mute_input'] = {
-				label: 'Mute Input',
-				options: this.muteOptions('Input Channel', 128, -1),
-			}
-			actions['mute_mono_group'] = {
-				label: 'Mute Mono Group',
-				options: this.muteOptions('Mono Group', 62, -1),
-			}
-			actions['mute_stereo_group'] = {
-				label: 'Mute Stereo Group',
-				options: this.muteOptions('Stereo Group', 31, 0x3f),
-			}
-			actions['mute_mono_aux'] = {
-				label: 'Mute Mono Aux',
-				options: this.muteOptions('Mono Aux', 62, -1),
-			}
-			actions['mute_stereo_aux'] = {
-				label: 'Mute Stereo Aux',
-				options: this.muteOptions('Stereo Aux', 31, 0x3f),
-			}
-			actions['mute_mono_matrix'] = {
-				label: 'Mute Mono Matrix',
-				options: this.muteOptions('Mono Matrix', 62, -1),
-			}
-			actions['mute_stereo_matrix'] = {
-				label: 'Mute Stereo Matrix',
-				options: this.muteOptions('Stereo Matrix', 31, 0x3f),
-			}
-			actions['mute_mono_fx_send'] = {
-				label: 'Mute Mono FX Send',
-				options: this.muteOptions('Mono FX Send', 16, -1),
-			}
-			actions['mute_stereo_fx_send'] = {
-				label: 'Mute Stereo FX Send',
-				options: this.muteOptions('Stereo FX Send', 16, 0x0f),
-			}
-			actions['mute_fx_return'] = {
-				label: 'Mute FX Return',
-				options: this.muteOptions('FX Return', 16, 0x1f),
-			}
-			actions['mute_master'] = {
-				label: 'Mute Group Master',
-				options: this.muteOptions('Mute Group Master', 8, 0x4d),
-			}
-			actions['mute_dca'] = {
-				label: 'Mute DCA',
-				options: this.muteOptions('DCA', 24, 0x35),
-			}
-			actions['fader_input'] = {
-				label: 'Set Input Fader to Level',
-				options: this.faderOptions('Channel', 128, -1),
-			}
-			actions['fader_mono_group'] = {
-				label: 'Set Mono Group Master Fader to Level',
-				options: this.faderOptions('Mono Group', 62, -1),
-			}
-			actions['fader_stereo_group'] = {
-				label: 'Set Stereo Group Master Fader to Level',
-				options: this.faderOptions('Stereo Group', 31, 0x3f),
-			}
-			actions['fader_mono_aux'] = {
-				label: 'Set Mono Aux Master Fader to Level',
-				options: this.faderOptions('Mono Aux', 62, -1),
-			}
-			actions['fader_stereo_aux'] = {
-				label: 'Set Stereo Aux Master Fader to Level',
-				options: this.faderOptions('Stereo Aux', 31, 0x3f),
-			}
-			actions['fader_mono_matrix'] = {
-				label: 'Set Mono Matrix Master Fader to Level',
-				options: this.faderOptions('Mono Matrix', 62, -1),
-			}
-			actions['fader_stereo_matrix'] = {
-				label: 'Set Stereo Matrix Master Fader to Level',
-				options: this.faderOptions('Stereo Matrix', 31, 0x3f),
-			}
-			actions['fader_mono_fx_send'] = {
-				label: 'Set Mono FX Send Master Fader to Level',
-				options: this.faderOptions('Mono FX Send', 16, -1),
-			}
-			actions['fader_stereo_fx_send'] = {
-				label: 'Set Stereo FX Send Master Fader to Level',
-				options: this.faderOptions('Stereo FX Send', 16, 0x0f),
-			}
-			actions['fader_fx_return'] = {
-				label: 'Set FX Return Fader to Level',
-				options: this.faderOptions('FX Return', 16, 0x1f),
-			}
-			actions['fader_DCA'] = {
-				label: 'Set DCA Fader to Level',
-				options: this.faderOptions('DCA', 24, 0x35),
-			}
-		} else {
-			// Actions for iLive
-			actions['mute_input'] = {
-				label: 'Mute Input',
-				options: this.muteOptions('Input Channel', 64, 0x1f),
-			}
-			actions['mute_mix'] = {
-				label: 'Mute Mix',
-				options: this.muteOptions('Mix', 32, 0x5f),
-			}
-			actions['mute_mono_fx_send'] = {
-				label: 'Mute FX Send',
-				options: this.muteOptions('FX Send', 8, -1),
-			}
-			actions['mute_fx_return'] = {
-				label: 'Mute FX Return',
-				options: this.muteOptions('FX Return', 8, 0x07),
-			}
-			actions['mute_dca'] = {
-				label: 'Mute DCA',
-				options: this.muteOptions('DCA', 16, 0x0f),
-			}
-
-			actions['fader_input'] = {
-				label: 'Set Input Fader to Level',
-				options: this.faderOptions('Channel', 64, 0x1f),
-			}
-			actions['fader_mix'] = {
-				label: 'Set Mix Fader to Level',
-				options: this.faderOptions('Mix', 32, 0x5f),
-			}
-			actions['fader_mono_fx_send'] = {
-				label: 'Set FX Send Master Fader to Level',
-				options: this.faderOptions('FX Send', 8, -1),
-			}
-			actions['fader_fx_return'] = {
-				label: 'Set FX Return Fader to Level',
-				options: this.faderOptions('FX Return', 8, 0x07),
-			}
-			actions['fader_DCA'] = {
-				label: 'Set DCA Fader to Level',
-				options: this.faderOptions('DCA', 16, 0x0f),
-			}
-		}
-
-		// Actions for all products
-		actions['phantom'] = {
-			label: 'Toggle 48v Phantom on Preamp',
-			options: this.phantomOptions('Preamp', this.chCount, -1),
-		}
-
-		actions['dca_assign'] = {
-			label: 'Assign DCA Groups for channel',
-			options: [
-				{
-					type: 'dropdown',
-					label: 'Input Channel',
-					id: 'inputChannel',
-					default: '0',
-					choices: this.CHOICES_INPUT_CHANNEL,
-					minChoicesForSearch: 0,
-				},
-				{
-					type: 'dropdown',
-					label: 'DCA',
-					id: 'dcaGroup',
-					default: [],
-					multiple: true,
-					choices: this.CHOICES_DCA,
-				},
-			],
-		}
-
-		if (this.config.model == 'dLive') {
-			actions['mute_assign'] = {
-				label: 'Assign Mute Groups for channel',
-				options: [
-					{
-						type: 'dropdown',
-						label: 'Input Channel',
-						id: 'inputChannel',
-						default: '0',
-						choices: this.CHOICES_INPUT_CHANNEL,
-						minChoicesForSearch: 0,
-					},
-					{
-						type: 'dropdown',
-						label: 'MUTE',
-						id: 'muteGroup',
-						default: [],
-						multiple: true,
-						choices: this.CHOICES_MUTE,
-					},
-				],
-			}
-
-			actions['vsc'] = {
-				label: 'Virtual Soundcheck',
-				options: [
-					{
-						type: 'dropdown',
-						label: 'VSC Mode',
-						id: 'vscMode',
-						default: 0,
-						choices: [
-							{ label: 'Inactive', id: 0 },
-							{ label: 'Record Send', id: 1 },
-							{ label: 'Virtual SoundCheck', id: 2 },
-						],
-					},
-				],
-			}
-
-			actions['talkback_on'] = {
-				label: 'Talkback On',
-				options: [
-					{
-						type: 'checkbox',
-						label: 'ON',
-						id: 'on',
-						default: true,
-					},
-				],
-			}
-		}
-
-		actions['scene_recall'] = {
-			label: 'Scene recall',
-			options: [
-				{
-					type: 'dropdown',
-					label: 'Scene Number',
-					id: 'sceneNumber',
-					default: '0',
-					choices: this.CHOICES_SCENES,
-					minChoicesForSearch: 0,
-				},
-			],
-		}
-
-		return actions
-	},
+	getActions
 }

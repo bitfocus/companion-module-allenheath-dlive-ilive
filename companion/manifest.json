@@ -1,0 +1,26 @@
+{
+    "id": "allenheath-dlive",
+    "name": "Allen & Heath dLive",
+    "shortname": "dlive",
+    "description": "Control Allen & Heath dLive mixers via MIDI and TCP with bidirectional MIDI feedback support",
+    "version": "2.0.0",
+    "license": "MIT",
+    "repository": "git+https://github.com/jensen-user/companion-module-allenheath-dlive.git",
+    "bugs": "https://github.com/jensen-user/companion-module-allenheath-dlive/issues",
+    "maintainers": [
+        {
+            "name": "Mike",
+            "email": "tools@ma-it.dk"
+        }
+    ],
+    "legacyIds": [],
+    "runtime": {
+        "type": "node22",
+        "api": "nodejs-ipc",
+        "apiVersion": "0.0.0",
+        "entrypoint": "../main.js"
+    },
+    "manufacturer": "Allen & Heath",
+    "products": ["dLive"],
+    "keywords": ["Audio", "Mixer", "MIDI", "TCP", "Live Sound", "Allen Heath"]
+}
