@@ -1,0 +1,36 @@
+{
+	"name": "companion-module-allenheath-dlive-tcpmidi",
+	"version": "1.0.0",
+	"description": "Companion module for receiving TCP MIDI from Allen & Heath dLive mixers",
+	"main": "main.js",
+	"type": "module",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"format": "prettier -w ."
+	},
+	"license": "MIT",
+	"dependencies": {
+		"@companion-module/base": "~1.12.0"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/jensen-user/companion-module-allenheath-dlive-tcpmidi.git"
+	},
+	"devDependencies": {
+		"@companion-module/tools": "^2.3.0"
+	},
+	"prettier": "@companion-module/tools/.prettierrc.json",
+	"keywords": [
+		"companion",
+		"dlive",
+		"allen-heath", 
+		"midi",
+		"tcp",
+		"receiver"
+	],
+	"author": "Mike",
+	"bugs": {
+		"url": "https://github.com/jensen-user/companion-module-allenheath-dlive-tcpmidi/issues"
+	},
+	"homepage": "https://github.com/jensen-user/companion-module-allenheath-dlive-tcpmidi#readme"
+}
