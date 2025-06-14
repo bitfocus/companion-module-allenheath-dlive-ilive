@@ -1,6 +1,6 @@
-# Allen & Heath dLive & iLive module
+# Allen & Heath dLive module
 
-Controls the Allen & Heath dLive and iLive Mixers.
+Controls the Allen & Heath dLive Mixers.
 
 ## Functions:
 
@@ -14,5 +14,6 @@ Controls the Allen & Heath dLive and iLive Mixers.
 - Recall Scene
 - Talkback On _(dLive only)_
 - Virtual SoundCheck mode _(dLive only)_
+- Receive MIDI - module breaks after ever recieve
 
 > Current version: 1.3.5
