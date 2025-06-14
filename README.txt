@@ -1,33 +1,33 @@
 # Allen & Heath dLive TCP MIDI Receiver
 
-A Bitfocus Companion module for receiving TCP MIDI messages from Allen & Heath dLive mixing consoles.
+A Bitfocus Companion module for receiving TCP MIDI softkey commands from Allen & Heath dLive mixing consoles.
 
 ## Overview
 
-This module connects to dLive mixers via TCP and receives MIDI messages in real-time, creating Companion variables for:
+This module connects to dLive mixers via TCP and receives MIDI messages in real-time, creating Companion variables specifically for:
 
-- **Softkey commands** from dLive surface
-- **Channel mute states** (inputs, DCAs, groups)
-- **Scene recall notifications**
-- **Connection and activity monitoring**
+- **Softkey commands** from dLive surface (Note On/Off messages only)
+- **Connection monitoring** and status tracking
+- **Basic MIDI activity** logging
 
-Perfect for integrating dLive surface controls with Companion workflows.
+Perfect for integrating dLive softkey controls with Companion workflows while ignoring fader spam and other unnecessary MIDI traffic.
 
 ## Quick Start
 
 1. **Install** the module in Companion 3.5.5+
-2. **Configure** your dLive IP address and MIDI settings
+2. **Configure** your dLive IP address (default port 51325)
 3. **Enable** MIDI over TCP on your dLive (Utility > Control > MIDI)
-4. **Start receiving** MIDI data and using variables in your buttons
+4. **Configure softkeys** on dLive to send MIDI Note On/Off messages
+5. **Use variables** in your Companion buttons and conditions
 
 ## Key Features
 
-- ✅ **Real-time TCP MIDI reception** from dLive
-- ✅ **Dynamic variable creation** for all received MIDI
-- ✅ **Softkey integration** for custom surface controls
-- ✅ **Channel state monitoring** (mutes, scenes)
-- ✅ **Auto-reconnection** with connection monitoring
-- ✅ **Debug mode** for development and troubleshooting
+- ✅ **TCP MIDI reception** from dLive with persistent connection
+- ✅ **Softkey-focused** - Only processes Note On/Off messages
+- ✅ **Ignores fader spam** - No Control Change or other MIDI clutter
+- ✅ **Auto-reconnection** with 15-second keep-alive
+- ✅ **Rate limiting** prevents overload (50 messages/second max)
+- ✅ **1-second reset** for display variables
 
 ## Configuration
 
@@ -36,55 +36,63 @@ Perfect for integrating dLive surface controls with Companion workflows.
 Utility > Control > MIDI:
 - Base MIDI Channel: 1 (or your preference)
 - MIDI over TCP: Enabled
+- Configure softkeys to send Note On/Off messages
 - Note your MixRack IP address
 ```
 
 ### Module Settings
-- **dLive IP**: Your MixRack/Surface IP
+- **dLive IP**: Your MixRack/Surface IP address
 - **Port**: 51325 (MixRack unencrypted - most common)
-- **Base MIDI Channel**: Must match dLive setting
-- **Reconnect**: Auto-reconnect interval in seconds
+- **Base MIDI Channel**: Must match dLive setting (currently not used for softkey detection)
+- **Reconnect Interval**: Auto-reconnect delay in seconds (0 = disable)
+- **Debug MIDI**: Enable detailed MIDI logging
 
 ## Variables Available
 
 ### Connection Status
-- `$(dlive:connection_status)` - Connected/Disconnected
-- `$(dlive:tcp_connected)` - Yes/No
-- `$(dlive:midi_messages_received)` - Message count
-
-### Channel States (Real-time)
-- `$(dlive:ch_1_mute)` through `$(dlive:ch_32_mute)` - ON/OFF
-- `$(dlive:dca_1_mute)` through `$(dlive:dca_24_mute)` - ON/OFF
-
-### Softkeys (Dynamic)
-- `$(dlive:softkey_note_1_60_status)` - ACTIVE/INACTIVE
-- `$(dlive:active_softkeys)` - Count of active softkeys
-- `$(dlive:last_softkey_pressed)` - Last softkey ID
+- `$(dlive:connection_status)` - "Connected" or "Disconnected"
+- `$(dlive:tcp_connected)` - "Yes" or "No"
+- `$(dlive:last_connection_time)` - Connection timestamp
 
 ### MIDI Activity
-- `$(dlive:last_midi_hex)` - Last message in hex
-- `$(dlive:last_midi_type)` - Message type
-- `$(dlive:current_scene)` - Current scene number
+- `$(dlive:midi_messages_received)` - Total message count
+- `$(dlive:last_midi_time)` - Last message timestamp  
+- `$(dlive:last_midi_hex)` - Last message in hex format (resets after 1s)
+
+### Softkey States
+- `$(dlive:active_softkeys)` - Count of currently pressed softkeys
+- `$(dlive:last_softkey_pressed)` - Last softkey ID (resets after 1s)
+
+### Dynamic Softkey Variables (Created automatically)
+- `$(dlive:softkey_note_1_127_status)` - "PRESSED" or "RELEASED"
+- `$(dlive:softkey_note_1_127_velocity)` - MIDI velocity value
+- `$(dlive:softkey_note_1_127_time)` - Press/release timestamp
 
 ## Example Uses
 
 ### Softkey Integration
-Configure dLive softkey to send MIDI Note On (Ch1, Note 60):
+Configure dLive softkey to send MIDI Note On (Ch1, Note 127):
 ```
-Button Condition: $(dlive:softkey_note_1_60_status) == "ACTIVE"
+Button Condition: $(dlive:softkey_note_1_127_status) == "PRESSED"
 Action: Trigger your custom Companion action
-```
-
-### Mute Status Display
-```
-Button Text: "Ch1: $(dlive:ch_1_mute)"
-Shows: "Ch1: ON" when muted, "Ch1: OFF" when unmuted
 ```
 
 ### Connection Monitor
 ```
 Button Text: "dLive: $(dlive:connection_status)"
 Button Color: Green when "Connected", Red when "Disconnected"
+```
+
+### Activity Display
+```
+Button Text: "MIDI: $(dlive:midi_messages_received)"
+Shows total count of received softkey messages
+```
+
+### Last Command Display
+```
+Button Text: "Last: $(dlive:last_softkey_pressed)"
+Shows: "note_1_127" when softkey pressed, "None" after 1 second
 ```
 
 ## Network Ports
@@ -96,31 +104,75 @@ Button Color: Green when "Connected", Red when "Disconnected"
 | 51328 | Surface MIDI (unencrypted) |
 | 51329 | Surface MIDI (TLS encrypted) |
 
+## MIDI Implementation
+
+### Processed Messages
+- **Note On (0x90)** - Softkey press detection
+  - Velocity > 0: Creates "PRESSED" status
+  - Velocity = 0: Creates "RELEASED" status
+- **Note Off (0x80)** - Softkey release detection
+
+### Ignored Messages (Performance Optimization)
+- **Control Change (0xB0)** - Fader movements, encoders
+- **Program Change (0xC0)** - Scene recalls
+- **Pitch Bend (0xE0)** - Preamp controls
+- **System Exclusive** - Name changes, colors
+
+### Rate Limiting
+- **Maximum 50 messages/second** processed
+- **100ms throttle** for identical messages
+- **Automatic cleanup** of old message timestamps
+
 ## Troubleshooting
 
 ### Connection Issues
-- ✅ Verify dLive IP address
+- ✅ Verify dLive IP address is correct
 - ✅ Check MIDI over TCP is enabled on dLive
 - ✅ Try port 51325 first (most common)
 - ✅ Test network connectivity (ping dLive)
+- ✅ Restart Companion if module stops responding
 
-### No MIDI Messages
-- ✅ Check Base MIDI Channel matches dLive
-- ✅ Enable debug mode to see raw MIDI
-- ✅ Test with simple channel mute on dLive
-- ✅ Verify dLive sends MIDI feedback
-
-### Softkey Issues
-- ✅ Configure softkeys to send MIDI on dLive
+### No Softkey Detection
+- ✅ Configure dLive softkeys to send MIDI Note On/Off
 - ✅ Check softkey MIDI channel/note settings
-- ✅ Use debug mode to verify MIDI transmission
+- ✅ Enable debug mode to see raw MIDI data
+- ✅ Verify softkey sends Note messages (not CC)
+
+### Module Stops Working
+- ✅ **Try**: Disable/re-enable module in Companion
+- ✅ **Try**: Change any config setting to trigger reconnection
+- ✅ **Last resort**: Restart Companion completely
+
+### Debug Mode Output
+Enable debug to see detailed logging:
+```
+=== TCP DATA RECEIVED: 90 7F 7F (3 bytes) ===
+=== PROCESSING MESSAGE 1 ===
+Softkey pressed: Channel 1, Note 127, Velocity 127
+```
+
+## Safe Test Commands
+
+For testing without interfering with dLive operations:
+- **Note 127**: `90 7F 7F` (Note On, Channel 1, Note 127, Velocity 127)
+- **Note 126**: `90 7E 7F` (Note On, Channel 1, Note 126, Velocity 127)
+
+These high note numbers are typically unused by dLive's internal MIDI mapping.
+
+## Technical Details
+
+### Connection Management
+- **TCP keep-alive**: 15-second intervals
+- **No timeout**: Connection stays open indefinitely
+- **Auto-reconnect**: Configurable interval (default 5 seconds)
+- **Clean disconnect**: Proper socket cleanup on module disable
+
+### Variable Reset Behavior
+- **Display variables** (`last_midi_hex`, `last_softkey_pressed`) reset after 1 second
+- **Status variables** (`connection_status`, `midi_messages_received`) persist
+- **Softkey variables** (`softkey_note_X_X_status`) update immediately
 
 ## Development
-
-### Requirements
-- Node.js 22+
-- Companion 3.5.5+
-- Allen & Heath dLive with MIDI over TCP
 
 ### File Structure
 ```
@@ -134,29 +186,19 @@ companion-module-allenheath-dlive/
     └── HELP.md         # User help documentation
 ```
 
-### Installation for Development
-```bash
-# Clone repository
-git clone https://github.com/jensen-user/companion-module-allenheath-dlive.git
-cd companion-module-allenheath-dlive
+### Performance Optimizations
+- **Softkey-only processing** - Ignores 90%+ of dLive MIDI traffic
+- **Rate limiting** - Prevents overload from rapid messages
+- **Efficient buffering** - Minimal memory usage
+- **Smart reconnection** - Only reconnects when actually needed
 
-# Install dependencies
-npm install
+## Version History
 
-# Link to Companion dev modules directory
-# (Follow Companion development setup guide)
-```
-
-## Contributing
-
-1. **Fork** the repository
-2. **Create** a feature branch
-3. **Test** with actual dLive hardware
-4. **Submit** a pull request
-
-## License
-
-MIT License - see [LICENSE](LICENSE) for details.
+- **1.0.0** (2025): Initial release
+  - TCP MIDI reception for softkeys only
+  - Connection monitoring and auto-reconnect
+  - Rate limiting and performance optimization
+  - Real-time variable updates with 1-second reset
 
 ## Support
 
@@ -164,17 +206,6 @@ MIT License - see [LICENSE](LICENSE) for details.
 - **Discussions**: [Companion Community](https://github.com/bitfocus/companion/discussions)
 - **Documentation**: [dLive MIDI Protocol](https://www.allen-heath.com/dlive)
 
-## Version
-
-**Current Version**: 1.0.0
-
-### Changelog
-- **1.0.0** (2025): Initial release
-  - TCP MIDI reception from dLive
-  - Real-time variable creation
-  - Softkey and channel tracking
-  - Auto-reconnection
-
 ---
 
-**Made for Bitfocus Companion** | **Allen & Heath dLive** | **TCP MIDI Integration**
+**Focused on Softkeys** | **Optimized for Performance** | **Allen & Heath dLive Integration**
