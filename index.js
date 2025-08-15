@@ -1,52 +1,58 @@
 /**
  *
  * Companion instance class for the A&H dLive & iLive Mixers.
- * @version 1.3.4
+ * @version 2.0.0
  *
  */
 
-let tcp = require('../../tcp')
-let instance_skel = require('../../instance_skel')
-let actions = require('./actions')
-let upgradeScripts = require('./upgrade')
+const { InstanceBase, Regex, runEntrypoint, TCPHelper } = require('@companion-module/base')
+const actions = require('./actions')
+const upgradeScripts = require('./upgrade')
 const MIDI = 51325
 const TCP = 51321
 
 /**
- * @extends instance_skel
- * @since 1.2.0
+ * @extends InstanceBase
+ * @since 2.0.0
  */
 
-class instance extends instance_skel {
+class ModuleInstance extends InstanceBase {
 	/**
 	 * Create an instance.
 	 *
-	 * @param {EventEmitter} system - the brains of the operation
-	 * @param {string} id - the instance ID
-	 * @param {Object} config - saved user configuration parameters
-	 * @since 1.2.0
+	 * @param {unknown} internal - the internal instance object
+	 * @since 2.0.0
 	 */
-	constructor(system, id, config) {
-		super(system, id, config)
+	constructor(internal) {
+		super(internal)
 
 		Object.assign(this, {
 			...actions,
 		})
 	}
 
-	static GetUpgradeScripts() {
-		return upgradeScripts
+	/**
+	 * Main initialization function called once the module
+	 * is OK to start doing things.
+	 *
+	 * @param {Object} config - saved user configuration parameters
+	 * @access public
+	 * @since 2.0.0
+	 */
+	async init(config) {
+		this.config = config
+		this.updateActions() // this.actions()
+		this.init_tcp()
 	}
 
 	/**
 	 * Setup the actions.
 	 *
-	 * @param {EventEmitter} system - the brains of the operation
 	 * @access public
-	 * @since 1.2.0
+	 * @since 2.0.0
 	 */
-	actions(system) {
-		this.setActions(this.getActions())
+	updateActions() {
+		this.setActionDefinitions(this.getActionDefinitions())
 	}
 
 	setRouting(ch, selArray, isMute) {
@@ -65,19 +71,20 @@ class instance extends instance_skel {
 	/**
 	 * Executes the provided action.
 	 *
-	 * @param {Object} action - the action to be executed
+	 * @param {string} actionId - the action ID to be executed
+	 * @param {Object} options - the action options
 	 * @access public
-	 * @since 1.2.0
+	 * @since 2.0.0
 	 */
-	action(action) {
-		let opt = action.options
+	sendAction(actionId, options) {
+		let opt = options
 		let channel = parseInt(opt.inputChannel)
 		let chOfs = 0
 		let strip = parseInt(opt.strip)
 		let cmd = { port: MIDI, buffers: [] }
 
 		switch (
-			action.action // Note that only available actions for the type (TCP or MIDI) will be processed
+			actionId // Note that only available actions for the type (TCP or MIDI) will be processed
 		) {
 			case 'mute_input':
 			case 'mute_mix':
@@ -208,9 +215,9 @@ class instance extends instance_skel {
 				let sendLevel = parseInt(opt.level)
 				let sendType = 0x01 // Default for aux sends
 				
-				if (action.action.includes('fx')) {
+				if (actionId.includes('fx')) {
 					sendType = 0x02 // FX sends
-				} else if (action.action.includes('matrix')) {
+				} else if (actionId.includes('matrix')) {
 					sendType = 0x03 // Matrix sends
 				}
 				
@@ -235,7 +242,7 @@ class instance extends instance_skel {
 
 		if (cmd.buffers.length == 0) {
 			// Mute or Fader Level actions
-			if (action.action.slice(0, 4) == 'mute') {
+			if (actionId.slice(0, 4) == 'mute') {
 				cmd.buffers = [Buffer.from([0x90 + chOfs, strip, opt.mute ? 0x7f : 0x3f, 0x90 + chOfs, strip, 0])]
 			} else {
 				let faderLevel = parseInt(opt.level)
@@ -248,10 +255,14 @@ class instance extends instance_skel {
 		for (let i = 0; i < cmd.buffers.length; i++) {
 			if (cmd.port === MIDI && this.midiSocket !== undefined) {
 				this.log('debug', `sending ${cmd.buffers[i].toString('hex')} via MIDI @${this.config.host}`)
-				this.midiSocket.write(cmd.buffers[i])
+				this.midiSocket.send(cmd.buffers[i]).catch((e) => {
+					this.log('error', `MIDI send error: ${e.message}`)
+				})
 			} else if (this.tcpSocket !== undefined) {
 				this.log('debug', `sending ${cmd.buffers[i].toString('hex')} via TCP @${this.config.host}`)
-				this.tcpSocket.write(cmd.buffers[i])
+				this.tcpSocket.send(cmd.buffers[i]).catch((e) => {
+					this.log('error', `TCP send error: ${e.message}`)
+				})
 			}
 		}
 	}
@@ -261,12 +272,12 @@ class instance extends instance_skel {
 	 *
 	 * @returns {Array} the config fields
 	 * @access public
-	 * @since 1.2.0
+	 * @since 2.0.0
 	 */
-	config_fields() {
+	getConfigFields() {
 		return [
 			{
-				type: 'text',
+				type: 'static-text',
 				id: 'info',
 				width: 12,
 				label: 'Information',
@@ -278,7 +289,7 @@ class instance extends instance_skel {
 				label: 'Target IP',
 				width: 6,
 				default: '192.168.1.70',
-				regex: this.REGEX_IP,
+				regex: Regex.IP,
 			},
 			{
 				type: 'dropdown',
@@ -298,9 +309,9 @@ class instance extends instance_skel {
 	 * Clean up the instance before it is destroyed.
 	 *
 	 * @access public
-	 * @since 1.2.0
+	 * @since 2.0.0
 	 */
-	destroy() {
+	async destroy() {
 		if (this.tcpSocket !== undefined) {
 			this.tcpSocket.destroy()
 		}
@@ -324,10 +335,10 @@ class instance extends instance_skel {
 	}
 
 	/**
-	 * INTERNAL: use setup data to initalize the tcp tcpSocket object.
+	 * INTERNAL: use setup data to initalize the tcp socket object.
 	 *
 	 * @access protected
-	 * @since 1.2.0
+	 * @since 2.0.0
 	 */
 	init_tcp() {
 		if (this.tcpSocket !== undefined) {
@@ -341,10 +352,10 @@ class instance extends instance_skel {
 		}
 
 		if (this.config.host) {
-			this.midiSocket = new tcp(this.config.host, MIDI)
+			this.midiSocket = new TCPHelper(this.config.host, MIDI)
 
 			this.midiSocket.on('status_change', (status, message) => {
-				this.status(status, message)
+				this.updateStatus(status, message)
 			})
 
 			this.midiSocket.on('error', (err) => {
@@ -356,10 +367,10 @@ class instance extends instance_skel {
 			})
 
 			if (this.config.model == 'dLive') {
-				this.tcpSocket = new tcp(this.config.host, TCP)
+				this.tcpSocket = new TCPHelper(this.config.host, TCP)
 
 				this.tcpSocket.on('status_change', (status, message) => {
-					this.status(status, message)
+					this.updateStatus(status, message)
 				})
 
 				this.tcpSocket.on('error', (err) => {
@@ -378,14 +389,14 @@ class instance extends instance_skel {
 	 *
 	 * @param {Object} config - the new configuration
 	 * @access public
-	 * @since 1.2.0
+	 * @since 2.0.0
 	 */
-	updateConfig(config) {
+	async configUpdated(config) {
 		this.config = config
 
-		this.actions()
+		this.updateActions()
 		this.init_tcp()
 	}
 }
 
-exports = module.exports = instance
+runEntrypoint(ModuleInstance, upgradeScripts)

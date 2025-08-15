@@ -1,3 +1,5 @@
+const { combineRgb } = require('@companion-module/base')
+
 module.exports = {
 	/**
 	 * Get the available actions.
@@ -7,7 +9,7 @@ module.exports = {
 	 * @since 1.2.0
 	 */
 
-	getActions() {
+	getActionDefinitions() {
 		this.chCount = this.config.model == 'dLive' ? 128 : 64
 		this.dcaCount = this.config.model == 'dLive' ? 24 : 16
 		this.sceneCount = this.config.model == 'dLive' ? 500 : 250
@@ -115,150 +117,252 @@ module.exports = {
 		// Actions for dLive
 		if (this.config.model == 'dLive') {
 			actions['mute_input'] = {
-				label: 'Mute Input',
+				name: 'Mute Input',
 				options: this.muteOptions('Input Channel', 128, -1),
+				callback: async (action) => {
+					this.sendAction('mute_input', action.options)
+				},
 			}
 			actions['mute_mono_group'] = {
-				label: 'Mute Mono Group',
+				name: 'Mute Mono Group',
 				options: this.muteOptions('Mono Group', 62, -1),
+				callback: async (action) => {
+					this.sendAction('mute_mono_group', action.options)
+				},
 			}
 			actions['mute_stereo_group'] = {
-				label: 'Mute Stereo Group',
+				name: 'Mute Stereo Group',
 				options: this.muteOptions('Stereo Group', 31, 0x3f),
+				callback: async (action) => {
+					this.sendAction('mute_stereo_group', action.options)
+				},
 			}
 			actions['mute_mono_aux'] = {
-				label: 'Mute Mono Aux',
+				name: 'Mute Mono Aux',
 				options: this.muteOptions('Mono Aux', 62, -1),
+				callback: async (action) => {
+					this.sendAction('mute_mono_aux', action.options)
+				},
 			}
 			actions['mute_stereo_aux'] = {
-				label: 'Mute Stereo Aux',
+				name: 'Mute Stereo Aux',
 				options: this.muteOptions('Stereo Aux', 31, 0x3f),
+				callback: async (action) => {
+					this.sendAction('mute_stereo_aux', action.options)
+				},
 			}
 			actions['mute_mono_matrix'] = {
-				label: 'Mute Mono Matrix',
+				name: 'Mute Mono Matrix',
 				options: this.muteOptions('Mono Matrix', 62, -1),
+				callback: async (action) => {
+					this.sendAction('mute_mono_matrix', action.options)
+				},
 			}
 			actions['mute_stereo_matrix'] = {
-				label: 'Mute Stereo Matrix',
+				name: 'Mute Stereo Matrix',
 				options: this.muteOptions('Stereo Matrix', 31, 0x3f),
+				callback: async (action) => {
+					this.sendAction('mute_stereo_matrix', action.options)
+				},
 			}
 			actions['mute_mono_fx_send'] = {
-				label: 'Mute Mono FX Send',
+				name: 'Mute Mono FX Send',
 				options: this.muteOptions('Mono FX Send', 16, -1),
+				callback: async (action) => {
+					this.sendAction('mute_mono_fx_send', action.options)
+				},
 			}
 			actions['mute_stereo_fx_send'] = {
-				label: 'Mute Stereo FX Send',
+				name: 'Mute Stereo FX Send',
 				options: this.muteOptions('Stereo FX Send', 16, 0x0f),
+				callback: async (action) => {
+					this.sendAction('mute_stereo_fx_send', action.options)
+				},
 			}
 			actions['mute_fx_return'] = {
-				label: 'Mute FX Return',
+				name: 'Mute FX Return',
 				options: this.muteOptions('FX Return', 16, 0x1f),
+				callback: async (action) => {
+					this.sendAction('mute_fx_return', action.options)
+				},
 			}
 			actions['mute_master'] = {
-				label: 'Mute Group Master',
+				name: 'Mute Group Master',
 				options: this.muteOptions('Mute Group Master', 8, 0x4d),
+				callback: async (action) => {
+					this.sendAction('mute_master', action.options)
+				},
 			}
 			actions['mute_dca'] = {
-				label: 'Mute DCA',
+				name: 'Mute DCA',
 				options: this.muteOptions('DCA', 24, 0x35),
+				callback: async (action) => {
+					this.sendAction('mute_dca', action.options)
+				},
 			}
 			actions['fader_input'] = {
-				label: 'Set Input Fader to Level',
+				name: 'Set Input Fader to Level',
 				options: this.faderOptions('Channel', 128, -1),
+				callback: async (action) => {
+					this.sendAction('fader_input', action.options)
+				},
 			}
 			actions['fader_mono_group'] = {
-				label: 'Set Mono Group Master Fader to Level',
+				name: 'Set Mono Group Master Fader to Level',
 				options: this.faderOptions('Mono Group', 62, -1),
+				callback: async (action) => {
+					this.sendAction('fader_mono_group', action.options)
+				},
 			}
 			actions['fader_stereo_group'] = {
-				label: 'Set Stereo Group Master Fader to Level',
+				name: 'Set Stereo Group Master Fader to Level',
 				options: this.faderOptions('Stereo Group', 31, 0x3f),
+				callback: async (action) => {
+					this.sendAction('fader_stereo_group', action.options)
+				},
 			}
 			actions['fader_mono_aux'] = {
-				label: 'Set Mono Aux Master Fader to Level',
+				name: 'Set Mono Aux Master Fader to Level',
 				options: this.faderOptions('Mono Aux', 62, -1),
+				callback: async (action) => {
+					this.sendAction('fader_mono_aux', action.options)
+				},
 			}
 			actions['fader_stereo_aux'] = {
-				label: 'Set Stereo Aux Master Fader to Level',
+				name: 'Set Stereo Aux Master Fader to Level',
 				options: this.faderOptions('Stereo Aux', 31, 0x3f),
+				callback: async (action) => {
+					this.sendAction('fader_stereo_aux', action.options)
+				},
 			}
 			actions['fader_mono_matrix'] = {
-				label: 'Set Mono Matrix Master Fader to Level',
+				name: 'Set Mono Matrix Master Fader to Level',
 				options: this.faderOptions('Mono Matrix', 62, -1),
+				callback: async (action) => {
+					this.sendAction('fader_mono_matrix', action.options)
+				},
 			}
 			actions['fader_stereo_matrix'] = {
-				label: 'Set Stereo Matrix Master Fader to Level',
+				name: 'Set Stereo Matrix Master Fader to Level',
 				options: this.faderOptions('Stereo Matrix', 31, 0x3f),
+				callback: async (action) => {
+					this.sendAction('fader_stereo_matrix', action.options)
+				},
 			}
 			actions['fader_mono_fx_send'] = {
-				label: 'Set Mono FX Send Master Fader to Level',
+				name: 'Set Mono FX Send Master Fader to Level',
 				options: this.faderOptions('Mono FX Send', 16, -1),
+				callback: async (action) => {
+					this.sendAction('fader_mono_fx_send', action.options)
+				},
 			}
 			actions['fader_stereo_fx_send'] = {
-				label: 'Set Stereo FX Send Master Fader to Level',
+				name: 'Set Stereo FX Send Master Fader to Level',
 				options: this.faderOptions('Stereo FX Send', 16, 0x0f),
+				callback: async (action) => {
+					this.sendAction('fader_stereo_fx_send', action.options)
+				},
 			}
 			actions['fader_fx_return'] = {
-				label: 'Set FX Return Fader to Level',
+				name: 'Set FX Return Fader to Level',
 				options: this.faderOptions('FX Return', 16, 0x1f),
+				callback: async (action) => {
+					this.sendAction('fader_fx_return', action.options)
+				},
 			}
 			actions['fader_DCA'] = {
-				label: 'Set DCA Fader to Level',
+				name: 'Set DCA Fader to Level',
 				options: this.faderOptions('DCA', 24, 0x35),
+				callback: async (action) => {
+					this.sendAction('fader_DCA', action.options)
+				},
 			}
 		} else {
 			// Actions for iLive
 			actions['mute_input'] = {
-				label: 'Mute Input',
+				name: 'Mute Input',
 				options: this.muteOptions('Input Channel', 64, 0x1f),
+				callback: async (action) => {
+					this.sendAction('mute_input', action.options)
+				},
 			}
 			actions['mute_mix'] = {
-				label: 'Mute Mix',
+				name: 'Mute Mix',
 				options: this.muteOptions('Mix', 32, 0x5f),
+				callback: async (action) => {
+					this.sendAction('mute_mix', action.options)
+				},
 			}
 			actions['mute_mono_fx_send'] = {
-				label: 'Mute FX Send',
+				name: 'Mute FX Send',
 				options: this.muteOptions('FX Send', 8, -1),
+				callback: async (action) => {
+					this.sendAction('mute_mono_fx_send', action.options)
+				},
 			}
 			actions['mute_fx_return'] = {
-				label: 'Mute FX Return',
+				name: 'Mute FX Return',
 				options: this.muteOptions('FX Return', 8, 0x07),
+				callback: async (action) => {
+					this.sendAction('mute_fx_return', action.options)
+				},
 			}
 			actions['mute_dca'] = {
-				label: 'Mute DCA',
+				name: 'Mute DCA',
 				options: this.muteOptions('DCA', 16, 0x0f),
+				callback: async (action) => {
+					this.sendAction('mute_dca', action.options)
+				},
 			}
 
 			actions['fader_input'] = {
-				label: 'Set Input Fader to Level',
+				name: 'Set Input Fader to Level',
 				options: this.faderOptions('Channel', 64, 0x1f),
+				callback: async (action) => {
+					this.sendAction('fader_input', action.options)
+				},
 			}
 			actions['fader_mix'] = {
-				label: 'Set Mix Fader to Level',
+				name: 'Set Mix Fader to Level',
 				options: this.faderOptions('Mix', 32, 0x5f),
+				callback: async (action) => {
+					this.sendAction('fader_mix', action.options)
+				},
 			}
 			actions['fader_mono_fx_send'] = {
-				label: 'Set FX Send Master Fader to Level',
+				name: 'Set FX Send Master Fader to Level',
 				options: this.faderOptions('FX Send', 8, -1),
+				callback: async (action) => {
+					this.sendAction('fader_mono_fx_send', action.options)
+				},
 			}
 			actions['fader_fx_return'] = {
-				label: 'Set FX Return Fader to Level',
+				name: 'Set FX Return Fader to Level',
 				options: this.faderOptions('FX Return', 8, 0x07),
+				callback: async (action) => {
+					this.sendAction('fader_fx_return', action.options)
+				},
 			}
 			actions['fader_DCA'] = {
-				label: 'Set DCA Fader to Level',
+				name: 'Set DCA Fader to Level',
 				options: this.faderOptions('DCA', 16, 0x0f),
+				callback: async (action) => {
+					this.sendAction('fader_DCA', action.options)
+				},
 			}
 		}
 
 		// Actions for all products
 		actions['phantom'] = {
-			label: 'Toggle 48v Phantom on Preamp',
+			name: 'Toggle 48v Phantom on Preamp',
 			options: this.phantomOptions('Preamp', this.chCount, -1),
+			callback: async (action) => {
+				this.sendAction('phantom', action.options)
+			},
 		}
 
 		actions['dca_assign'] = {
-			label: 'Assign DCA Groups for channel',
+			name: 'Assign DCA Groups for channel',
 			options: [
 				{
 					type: 'dropdown',
@@ -269,19 +373,21 @@ module.exports = {
 					minChoicesForSearch: 0,
 				},
 				{
-					type: 'dropdown',
+					type: 'multidropdown',
 					label: 'DCA',
 					id: 'dcaGroup',
 					default: [],
-					multiple: true,
 					choices: this.CHOICES_DCA,
 				},
 			],
+			callback: async (action) => {
+				this.sendAction('dca_assign', action.options)
+			},
 		}
 
 		if (this.config.model == 'dLive') {
 			actions['mute_assign'] = {
-				label: 'Assign Mute Groups for channel',
+				name: 'Assign Mute Groups for channel',
 				options: [
 					{
 						type: 'dropdown',
@@ -292,18 +398,20 @@ module.exports = {
 						minChoicesForSearch: 0,
 					},
 					{
-						type: 'dropdown',
+						type: 'multidropdown',
 						label: 'MUTE',
 						id: 'muteGroup',
 						default: [],
-						multiple: true,
 						choices: this.CHOICES_MUTE,
 					},
 				],
+				callback: async (action) => {
+					this.sendAction('mute_assign', action.options)
+				},
 			}
 
 			actions['vsc'] = {
-				label: 'Virtual Soundcheck',
+				name: 'Virtual Soundcheck',
 				options: [
 					{
 						type: 'dropdown',
@@ -317,10 +425,13 @@ module.exports = {
 						],
 					},
 				],
+				callback: async (action) => {
+					this.sendAction('vsc', action.options)
+				},
 			}
 
 			actions['talkback_on'] = {
-				label: 'Talkback On',
+				name: 'Talkback On',
 				options: [
 					{
 						type: 'checkbox',
@@ -329,11 +440,14 @@ module.exports = {
 						default: true,
 					},
 				],
+				callback: async (action) => {
+					this.sendAction('talkback_on', action.options)
+				},
 			}
 		}
 
 		actions['scene_recall'] = {
-			label: 'Scene recall',
+			name: 'Scene recall',
 			options: [
 				{
 					type: 'dropdown',
@@ -344,24 +458,33 @@ module.exports = {
 					minChoicesForSearch: 0,
 				},
 			],
+			callback: async (action) => {
+				this.sendAction('scene_recall', action.options)
+			},
 		}
 
 		// New Protocol V2.0 Actions
 		
 		// Scene Navigation
 		actions['scene_next'] = {
-			label: 'Scene Go Next',
+			name: 'Scene Go Next',
 			options: [],
+			callback: async (action) => {
+				this.sendAction('scene_next', action.options)
+			},
 		}
 
 		actions['scene_previous'] = {
-			label: 'Scene Go Previous',
+			name: 'Scene Go Previous',
 			options: [],
+			callback: async (action) => {
+				this.sendAction('scene_previous', action.options)
+			},
 		}
 
 		// Solo Controls
 		actions['solo_input'] = {
-			label: 'Solo Input Channel',
+			name: 'Solo Input Channel',
 			options: [
 				{
 					type: 'dropdown',
@@ -378,11 +501,14 @@ module.exports = {
 					default: true,
 				},
 			],
+			callback: async (action) => {
+				this.sendAction('solo_input', action.options)
+			},
 		}
 
 		// EQ Controls
 		actions['eq_enable_input'] = {
-			label: 'EQ Enable/Disable Input Channel',
+			name: 'EQ Enable/Disable Input Channel',
 			options: [
 				{
 					type: 'dropdown',
@@ -399,6 +525,9 @@ module.exports = {
 					default: true,
 				},
 			],
+			callback: async (action) => {
+				this.sendAction('eq_enable_input', action.options)
+			},
 		}
 
 		// Preamp Gain Control
@@ -410,7 +539,7 @@ module.exports = {
 		}
 
 		actions['preamp_gain'] = {
-			label: 'Set Preamp Gain',
+			name: 'Set Preamp Gain',
 			options: [
 				{
 					type: 'dropdown',
@@ -429,11 +558,14 @@ module.exports = {
 					minChoicesForSearch: 0,
 				},
 			],
+			callback: async (action) => {
+				this.sendAction('preamp_gain', action.options)
+			},
 		}
 
 		// Preamp Pad Control
 		actions['preamp_pad'] = {
-			label: 'Toggle Preamp Pad',
+			name: 'Toggle Preamp Pad',
 			options: [
 				{
 					type: 'dropdown',
@@ -450,6 +582,9 @@ module.exports = {
 					default: true,
 				},
 			],
+			callback: async (action) => {
+				this.sendAction('preamp_pad', action.options)
+			},
 		}
 
 		// High Pass Filter Control
@@ -472,7 +607,7 @@ module.exports = {
 		]
 
 		actions['hpf_control'] = {
-			label: 'Set High Pass Filter',
+			name: 'Set High Pass Filter',
 			options: [
 				{
 					type: 'dropdown',
@@ -490,6 +625,9 @@ module.exports = {
 					choices: this.CHOICES_HPF,
 				},
 			],
+			callback: async (action) => {
+				this.sendAction('hpf_control', action.options)
+			},
 		}
 
 		// Send Level Controls
@@ -529,38 +667,56 @@ module.exports = {
 		if (this.config.model == 'dLive') {
 			// Send Level Controls for dLive
 			actions['send_aux_mono'] = {
-				label: 'Set Aux Mono Send Level',
+				name: 'Set Aux Mono Send Level',
 				options: this.sendLevelOptions('Mono Aux', 62, -1),
+				callback: async (action) => {
+					this.sendAction('send_aux_mono', action.options)
+				},
 			}
 
 			actions['send_aux_stereo'] = {
-				label: 'Set Aux Stereo Send Level',
+				name: 'Set Aux Stereo Send Level',
 				options: this.sendLevelOptions('Stereo Aux', 31, 0x3f),
+				callback: async (action) => {
+					this.sendAction('send_aux_stereo', action.options)
+				},
 			}
 
 			actions['send_fx_mono'] = {
-				label: 'Set FX Mono Send Level',
+				name: 'Set FX Mono Send Level',
 				options: this.sendLevelOptions('Mono FX', 16, -1),
+				callback: async (action) => {
+					this.sendAction('send_fx_mono', action.options)
+				},
 			}
 
 			actions['send_fx_stereo'] = {
-				label: 'Set FX Stereo Send Level',
+				name: 'Set FX Stereo Send Level',
 				options: this.sendLevelOptions('Stereo FX', 16, 0x0f),
+				callback: async (action) => {
+					this.sendAction('send_fx_stereo', action.options)
+				},
 			}
 
 			actions['send_matrix_mono'] = {
-				label: 'Set Matrix Mono Send Level',
+				name: 'Set Matrix Mono Send Level',
 				options: this.sendLevelOptions('Mono Matrix', 62, -1),
+				callback: async (action) => {
+					this.sendAction('send_matrix_mono', action.options)
+				},
 			}
 
 			actions['send_matrix_stereo'] = {
-				label: 'Set Matrix Stereo Send Level',
+				name: 'Set Matrix Stereo Send Level',
 				options: this.sendLevelOptions('Stereo Matrix', 31, 0x3f),
+				callback: async (action) => {
+					this.sendAction('send_matrix_stereo', action.options)
+				},
 			}
 
 			// Input to Main Assignment
 			actions['input_to_main'] = {
-				label: 'Input to Main Assign',
+				name: 'Input to Main Assign',
 				options: [
 					{
 						type: 'dropdown',
@@ -577,17 +733,26 @@ module.exports = {
 						default: true,
 					},
 				],
+				callback: async (action) => {
+					this.sendAction('input_to_main', action.options)
+				},
 			}
 		} else {
 			// Send Level Controls for iLive (simplified)
 			actions['send_mix'] = {
-				label: 'Set Mix Send Level',
+				name: 'Set Mix Send Level',
 				options: this.sendLevelOptions('Mix', 32, 0x5f),
+				callback: async (action) => {
+					this.sendAction('send_mix', action.options)
+				},
 			}
 
 			actions['send_fx'] = {
-				label: 'Set FX Send Level',
+				name: 'Set FX Send Level',
 				options: this.sendLevelOptions('FX Send', 8, -1),
+				callback: async (action) => {
+					this.sendAction('send_fx', action.options)
+				},
 			}
 		}
 
