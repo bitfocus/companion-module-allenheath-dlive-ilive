@@ -8,8 +8,6 @@
 const { InstanceBase, Regex, runEntrypoint, TCPHelper } = require('@companion-module/base')
 const actions = require('./actions')
 const upgradeScripts = require('./upgrade')
-const MIDI = 51325
-const TCP = 51321
 
 /**
  * @extends InstanceBase
@@ -29,20 +27,6 @@ class ModuleInstance extends InstanceBase {
 		Object.assign(this, {
 			...actions,
 		})
-	}
-
-	/**
-	 * Main initialization function called once the module
-	 * is OK to start doing things.
-	 *
-	 * @param {Object} config - saved user configuration parameters
-	 * @access public
-	 * @since 2.0.0
-	 */
-	async init(config) {
-		this.config = config
-		this.updateActions() // this.actions()
-		this.init_tcp()
 	}
 
 	/**
@@ -81,7 +65,7 @@ class ModuleInstance extends InstanceBase {
 		let channel = parseInt(opt.inputChannel)
 		let chOfs = 0
 		let strip = parseInt(opt.strip)
-		let cmd = { port: MIDI, buffers: [] }
+		let cmd = { port: this.config.midiPort, buffers: [] }
 
 		switch (
 			actionId // Note that only available actions for the type (TCP or MIDI) will be processed
@@ -228,14 +212,14 @@ class ModuleInstance extends InstanceBase {
 
 			case 'talkback_on':
 				cmd = {
-					port: TCP,
+					port: this.config.tcpPort,
 					buffers: [Buffer.from([0xf0, 0, 2, 0, 0x4b, 0, 0x4a, 0x10, 0xe7, 0, 1, opt.on ? 1 : 0, 0xf7])],
 				}
 				break
 
 			case 'vsc':
 				cmd = {
-					port: TCP,
+					port: this.config.tcpPort,
 					buffers: [Buffer.from([0xf0, 0, 2, 0, 0x4b, 0, 0x4a, 0x10, 0x8a, 0, 1, opt.vscMode, 0xf7])],
 				}
 		}
@@ -253,13 +237,13 @@ class ModuleInstance extends InstanceBase {
 		// console.log(cmd);
 
 		for (let i = 0; i < cmd.buffers.length; i++) {
-			if (cmd.port === MIDI && this.midiSocket !== undefined) {
-				this.log('debug', `sending ${cmd.buffers[i].toString('hex')} via MIDI @${this.config.host}`)
+			if (cmd.port === this.config.midiPort && this.midiSocket !== undefined) {
+				this.log('debug', `sending ${cmd.buffers[i].toString('hex')} via MIDI @${this.config.host}:${this.config.midiPort}`)
 				this.midiSocket.send(cmd.buffers[i]).catch((e) => {
 					this.log('error', `MIDI send error: ${e.message}`)
 				})
 			} else if (this.tcpSocket !== undefined) {
-				this.log('debug', `sending ${cmd.buffers[i].toString('hex')} via TCP @${this.config.host}`)
+				this.log('debug', `sending ${cmd.buffers[i].toString('hex')} via TCP @${this.config.host}:${this.config.tcpPort}`)
 				this.tcpSocket.send(cmd.buffers[i]).catch((e) => {
 					this.log('error', `TCP send error: ${e.message}`)
 				})
@@ -302,6 +286,24 @@ class ModuleInstance extends InstanceBase {
 					{ id: 'iLive', label: 'iLive' },
 				],
 			},
+			{
+				type: 'number',
+				id: 'midiPort',
+				label: 'MIDI Port',
+				width: 6,
+				default: 51328,
+				min: 1,
+				max: 65535,
+			},
+			{
+				type: 'number',
+				id: 'tcpPort',
+				label: 'TCP Port (dLive only)',
+				width: 6,
+				default: 51321,
+				min: 1,
+				max: 65535,
+			},
 		]
 	}
 
@@ -330,8 +332,9 @@ class ModuleInstance extends InstanceBase {
 	 * @access public
 	 * @since 1.2.0
 	 */
-	init() {
-		this.updateConfig(this.config)
+	async init() {
+		// Initialize with current config or empty object if not set yet
+		await this.configUpdated(this.config || {})
 	}
 
 	/**
@@ -352,7 +355,7 @@ class ModuleInstance extends InstanceBase {
 		}
 
 		if (this.config.host) {
-			this.midiSocket = new TCPHelper(this.config.host, MIDI)
+			this.midiSocket = new TCPHelper(this.config.host, this.config.midiPort)
 
 			this.midiSocket.on('status_change', (status, message) => {
 				this.updateStatus(status, message)
@@ -367,7 +370,7 @@ class ModuleInstance extends InstanceBase {
 			})
 
 			if (this.config.model == 'dLive') {
-				this.tcpSocket = new TCPHelper(this.config.host, TCP)
+				this.tcpSocket = new TCPHelper(this.config.host, this.config.tcpPort)
 
 				this.tcpSocket.on('status_change', (status, message) => {
 					this.updateStatus(status, message)
@@ -392,7 +395,17 @@ class ModuleInstance extends InstanceBase {
 	 * @since 2.0.0
 	 */
 	async configUpdated(config) {
-		this.config = config
+		// Provide default config if none exists
+		this.config = config || {
+			host: '192.168.1.70',
+			model: 'dLive',
+			midiPort: 51328,
+			tcpPort: 51321
+		}
+
+		// Ensure port defaults are set even if config exists
+		if (!this.config.midiPort) this.config.midiPort = 51328
+		if (!this.config.tcpPort) this.config.tcpPort = 51321
 
 		this.updateActions()
 		this.init_tcp()

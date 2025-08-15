@@ -12,8 +12,9 @@ This module provides comprehensive control for Allen & Heath dLive and iLive dig
 1. **IP Address**: Enter the IP address of your dLive Surface or MixRack
 2. **Console Type**: Select either "dLive" or "iLive" to enable appropriate features
 3. **Network Ports**: 
-   - MIDI commands: Port 51325
-   - TCP commands: Port 51321 (dLive advanced features)
+   - **MIDI Port**: Configurable (default: 51328) - Used for basic mixer commands
+   - **TCP Port**: Configurable (default: 51321) - Used for dLive advanced features only
+4. **Port Configuration**: Both MIDI and TCP ports can be customized in the module configuration
 
 ## Available Actions
 
