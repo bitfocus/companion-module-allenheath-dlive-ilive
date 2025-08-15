@@ -153,6 +153,72 @@ class instance extends instance_skel {
 				cmd.buffers = [Buffer.from([0xb0, 0, (sceneNumber >> 7) & 0x0f, 0xc0, sceneNumber & 0x7f])]
 				break
 
+			case 'scene_next':
+				cmd.buffers = [Buffer.from([0xb0, 0x77, 0x7f])] // Control Change for Scene Next
+				break
+
+			case 'scene_previous':
+				cmd.buffers = [Buffer.from([0xb0, 0x76, 0x7f])] // Control Change for Scene Previous
+				break
+
+			case 'solo_input':
+				cmd.buffers = [Buffer.from([0xb0, 0x73, strip, 0xb0, 0x26, opt.solo ? 0x7f : 0x00])]
+				break
+
+			case 'eq_enable_input':
+				// NRPN message for EQ Enable/Disable
+				cmd.buffers = [Buffer.from([0xb0, 0x63, strip, 0xb0, 0x62, 0x01, 0xb0, 0x06, opt.enable ? 0x7f : 0x00])]
+				break
+
+			case 'preamp_gain':
+				// Pitchbend message for preamp gain (14-bit value)
+				let gainValue = parseInt(opt.gain)
+				let lsb = gainValue & 0x7f
+				let msb = (gainValue >> 7) & 0x7f
+				cmd.buffers = [Buffer.from([0xe0, lsb, msb])]
+				break
+
+			case 'preamp_pad':
+				cmd.buffers = [
+					Buffer.from([0xf0, 0, 0, 0x1a, 0x50, 0x10, 0x01, 0, 0, 0x0d, strip, opt.pad ? 0x7f : 0, 0xf7]),
+				]
+				break
+
+			case 'hpf_control':
+				// NRPN message for HPF control
+				cmd.buffers = [Buffer.from([0xb0, 0x63, strip, 0xb0, 0x62, 0x02, 0xb0, 0x06, parseInt(opt.frequency)])]
+				break
+
+			case 'input_to_main':
+				// NRPN message for Input to Main assignment
+				cmd.buffers = [Buffer.from([0xb0, 0x63, strip, 0xb0, 0x62, 0x03, 0xb0, 0x06, opt.assign ? 0x7f : 0x00])]
+				break
+
+			case 'send_aux_mono':
+			case 'send_aux_stereo':
+			case 'send_fx_mono':
+			case 'send_fx_stereo':
+			case 'send_matrix_mono':
+			case 'send_matrix_stereo':
+			case 'send_mix':
+			case 'send_fx':
+				// SysEx messages for send levels
+				let inputCh = parseInt(opt.inputChannel)
+				let sendCh = parseInt(opt.send)
+				let sendLevel = parseInt(opt.level)
+				let sendType = 0x01 // Default for aux sends
+				
+				if (action.action.includes('fx')) {
+					sendType = 0x02 // FX sends
+				} else if (action.action.includes('matrix')) {
+					sendType = 0x03 // Matrix sends
+				}
+				
+				cmd.buffers = [
+					Buffer.from([0xf0, 0, 0, 0x1a, 0x50, 0x10, 0x01, 0, 0, sendType, inputCh, sendCh, sendLevel, 0xf7]),
+				]
+				break
+
 			case 'talkback_on':
 				cmd = {
 					port: TCP,

@@ -346,6 +346,251 @@ module.exports = {
 			],
 		}
 
+		// New Protocol V2.0 Actions
+		
+		// Scene Navigation
+		actions['scene_next'] = {
+			label: 'Scene Go Next',
+			options: [],
+		}
+
+		actions['scene_previous'] = {
+			label: 'Scene Go Previous',
+			options: [],
+		}
+
+		// Solo Controls
+		actions['solo_input'] = {
+			label: 'Solo Input Channel',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Input Channel',
+					id: 'strip',
+					default: 0,
+					choices: this.CHOICES_INPUT_CHANNEL,
+					minChoicesForSearch: 0,
+				},
+				{
+					type: 'checkbox',
+					label: 'Solo',
+					id: 'solo',
+					default: true,
+				},
+			],
+		}
+
+		// EQ Controls
+		actions['eq_enable_input'] = {
+			label: 'EQ Enable/Disable Input Channel',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Input Channel',
+					id: 'strip',
+					default: 0,
+					choices: this.CHOICES_INPUT_CHANNEL,
+					minChoicesForSearch: 0,
+				},
+				{
+					type: 'checkbox',
+					label: 'EQ Enable',
+					id: 'enable',
+					default: true,
+				},
+			],
+		}
+
+		// Preamp Gain Control
+		this.CHOICES_GAIN = []
+		for (let i = 0; i <= 127; i++) {
+			let gainVal = ((i * 60) / 127 - 10).toFixed(1) // -10dB to +50dB range
+			let gainStr = gainVal == 0 ? '0' : gainVal > 0 ? `+${gainVal}` : gainVal
+			this.CHOICES_GAIN.push({ label: `${gainStr} dB`, id: i })
+		}
+
+		actions['preamp_gain'] = {
+			label: 'Set Preamp Gain',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Input Channel',
+					id: 'strip',
+					default: 0,
+					choices: this.CHOICES_INPUT_CHANNEL,
+					minChoicesForSearch: 0,
+				},
+				{
+					type: 'dropdown',
+					label: 'Gain Level',
+					id: 'gain',
+					default: 42, // Approximately 0dB
+					choices: this.CHOICES_GAIN,
+					minChoicesForSearch: 0,
+				},
+			],
+		}
+
+		// Preamp Pad Control
+		actions['preamp_pad'] = {
+			label: 'Toggle Preamp Pad',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Input Channel',
+					id: 'strip',
+					default: 0,
+					choices: this.CHOICES_INPUT_CHANNEL,
+					minChoicesForSearch: 0,
+				},
+				{
+					type: 'checkbox',
+					label: 'Pad (-20dB)',
+					id: 'pad',
+					default: true,
+				},
+			],
+		}
+
+		// High Pass Filter Control
+		this.CHOICES_HPF = [
+			{ label: 'Off', id: 0 },
+			{ label: '20 Hz', id: 1 },
+			{ label: '25 Hz', id: 2 },
+			{ label: '31.5 Hz', id: 3 },
+			{ label: '40 Hz', id: 4 },
+			{ label: '50 Hz', id: 5 },
+			{ label: '63 Hz', id: 6 },
+			{ label: '80 Hz', id: 7 },
+			{ label: '100 Hz', id: 8 },
+			{ label: '125 Hz', id: 9 },
+			{ label: '160 Hz', id: 10 },
+			{ label: '200 Hz', id: 11 },
+			{ label: '250 Hz', id: 12 },
+			{ label: '315 Hz', id: 13 },
+			{ label: '400 Hz', id: 14 },
+		]
+
+		actions['hpf_control'] = {
+			label: 'Set High Pass Filter',
+			options: [
+				{
+					type: 'dropdown',
+					label: 'Input Channel',
+					id: 'strip',
+					default: 0,
+					choices: this.CHOICES_INPUT_CHANNEL,
+					minChoicesForSearch: 0,
+				},
+				{
+					type: 'dropdown',
+					label: 'HPF Frequency',
+					id: 'frequency',
+					default: 0,
+					choices: this.CHOICES_HPF,
+				},
+			],
+		}
+
+		// Send Level Controls
+		this.sendLevelOptions = (name, qty, ofs) => {
+			this.CHOICES = []
+			for (let i = 1; i <= qty; i++) {
+				this.CHOICES.push({ label: `${name} ${i}`, id: i + ofs })
+			}
+			return [
+				{
+					type: 'dropdown',
+					label: 'Input Channel',
+					id: 'inputChannel',
+					default: 0,
+					choices: this.CHOICES_INPUT_CHANNEL,
+					minChoicesForSearch: 0,
+				},
+				{
+					type: 'dropdown',
+					label: name,
+					id: 'send',
+					default: 1 + ofs,
+					choices: this.CHOICES,
+					minChoicesForSearch: 0,
+				},
+				{
+					type: 'dropdown',
+					label: 'Send Level',
+					id: 'level',
+					default: 0,
+					choices: this.CHOICES_FADER,
+					minChoicesForSearch: 0,
+				},
+			]
+		}
+
+		if (this.config.model == 'dLive') {
+			// Send Level Controls for dLive
+			actions['send_aux_mono'] = {
+				label: 'Set Aux Mono Send Level',
+				options: this.sendLevelOptions('Mono Aux', 62, -1),
+			}
+
+			actions['send_aux_stereo'] = {
+				label: 'Set Aux Stereo Send Level',
+				options: this.sendLevelOptions('Stereo Aux', 31, 0x3f),
+			}
+
+			actions['send_fx_mono'] = {
+				label: 'Set FX Mono Send Level',
+				options: this.sendLevelOptions('Mono FX', 16, -1),
+			}
+
+			actions['send_fx_stereo'] = {
+				label: 'Set FX Stereo Send Level',
+				options: this.sendLevelOptions('Stereo FX', 16, 0x0f),
+			}
+
+			actions['send_matrix_mono'] = {
+				label: 'Set Matrix Mono Send Level',
+				options: this.sendLevelOptions('Mono Matrix', 62, -1),
+			}
+
+			actions['send_matrix_stereo'] = {
+				label: 'Set Matrix Stereo Send Level',
+				options: this.sendLevelOptions('Stereo Matrix', 31, 0x3f),
+			}
+
+			// Input to Main Assignment
+			actions['input_to_main'] = {
+				label: 'Input to Main Assign',
+				options: [
+					{
+						type: 'dropdown',
+						label: 'Input Channel',
+						id: 'strip',
+						default: 0,
+						choices: this.CHOICES_INPUT_CHANNEL,
+						minChoicesForSearch: 0,
+					},
+					{
+						type: 'checkbox',
+						label: 'Assign to Main',
+						id: 'assign',
+						default: true,
+					},
+				],
+			}
+		} else {
+			// Send Level Controls for iLive (simplified)
+			actions['send_mix'] = {
+				label: 'Set Mix Send Level',
+				options: this.sendLevelOptions('Mix', 32, 0x5f),
+			}
+
+			actions['send_fx'] = {
+				label: 'Set FX Send Level',
+				options: this.sendLevelOptions('FX Send', 8, -1),
+			}
+		}
+
 		return actions
 	},
 }
