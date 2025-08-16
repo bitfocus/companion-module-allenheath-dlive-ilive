@@ -95,6 +95,8 @@ class ModuleInstance extends InstanceBase {
 			case 'mute_fx_return':
 			case 'mute_dca':
 			case 'mute_master':
+			case 'mute_ufx_send':
+			case 'mute_ufx_return':
 				chOfs = this.config.model == 'dLive' ? 4 : 0
 				break
 
@@ -122,6 +124,8 @@ class ModuleInstance extends InstanceBase {
 			case 'fader_mono_fx_send':
 			case 'fader_stereo_fx_send':
 			case 'fader_fx_return':
+			case 'fader_ufx_send':
+			case 'fader_ufx_return':
 				chOfs = this.config.model == 'dLive' ? 4 : 0
 				break
 
@@ -193,21 +197,81 @@ class ModuleInstance extends InstanceBase {
 			case 'send_matrix_stereo':
 			case 'send_mix':
 			case 'send_fx':
+			case 'send_ufx':
 				// SysEx messages for send levels
 				let inputCh = parseInt(opt.inputChannel)
 				let sendCh = parseInt(opt.send)
 				let sendLevel = parseInt(opt.level)
 				let sendType = 0x01 // Default for aux sends
 				
-				if (actionId.includes('fx')) {
+				if (actionId.includes('fx') && !actionId.includes('ufx')) {
 					sendType = 0x02 // FX sends
 				} else if (actionId.includes('matrix')) {
 					sendType = 0x03 // Matrix sends
+				} else if (actionId.includes('ufx')) {
+					sendType = 0x04 // UFX sends
 				}
 				
 				cmd.buffers = [
 					Buffer.from([0xf0, 0, 0, 0x1a, 0x50, 0x10, 0x01, 0, 0, sendType, inputCh, sendCh, sendLevel, 0xf7]),
 				]
+				break
+
+			case 'ufx_global_key':
+				// Control Change message for UFX Global Key (BN, 0C, Key)
+				cmd.buffers = [Buffer.from([0xb0 + (this.config.midiChannel || 0), 0x0c, parseInt(opt.key)])]
+				break
+
+			case 'ufx_global_scale':
+				// Control Change message for UFX Global Scale (BN, 0D, Scale)
+				cmd.buffers = [Buffer.from([0xb0 + (this.config.midiChannel || 0), 0x0d, parseInt(opt.scale)])]
+				break
+
+			case 'ufx_unit_parameter':
+				// Control Change message for UFX Unit Parameter (BM, nn, vv)
+				let midiCh = parseInt(opt.midiChannel) - 1 // Convert to 0-based
+				cmd.buffers = [Buffer.from([0xb0 + midiCh, parseInt(opt.controlNumber), parseInt(opt.value)])]
+				break
+
+			case 'ufx_unit_key':
+				// Control Change message for UFX Unit Key Parameter with CC value scaling
+				let keyMidiCh = parseInt(opt.midiChannel) - 1 // Convert to 0-based
+				let controlNum = parseInt(opt.controlNumber)
+				
+				// Map key to CC value range (refer to protocol table)
+				let keyMapping = {
+					'C': 5,    // Mid-range value for C (0-10 range)
+					'C#': 16,  // Mid-range value for C# (11-21 range)
+					'D': 26,   // Mid-range value for D (22-31 range)
+					'D#': 37,  // Mid-range value for D# (32-42 range)
+					'E': 47,   // Mid-range value for E (43-52 range)
+					'F': 58,   // Mid-range value for F (53-63 range)
+					'F#': 69,  // Mid-range value for F# (64-74 range)
+					'G': 79,   // Mid-range value for G (75-84 range)
+					'G#': 90,  // Mid-range value for G# (85-95 range)
+					'A': 100,  // Mid-range value for A (96-105 range)
+					'A#': 111, // Mid-range value for A# (106-116 range)
+					'B': 122   // Mid-range value for B (117-127 range)
+				}
+				
+				let keyValue = keyMapping[opt.key] || 5
+				cmd.buffers = [Buffer.from([0xb0 + keyMidiCh, controlNum, keyValue])]
+				break
+
+			case 'ufx_unit_scale':
+				// Control Change message for UFX Unit Scale Parameter with CC value scaling
+				let scaleMidiCh = parseInt(opt.midiChannel) - 1 // Convert to 0-based
+				let scaleControlNum = parseInt(opt.controlNumber)
+				
+				// Map scale to CC value range (refer to protocol table)
+				let scaleMapping = {
+					'Major': 21,      // Mid-range value for Major (0-42 range)
+					'Minor': 63,      // Mid-range value for Minor (43-84 range)
+					'Chromatic': 106  // Mid-range value for Chromatic (85-127 range)
+				}
+				
+				let scaleValue = scaleMapping[opt.scale] || 21
+				cmd.buffers = [Buffer.from([0xb0 + scaleMidiCh, scaleControlNum, scaleValue])]
 				break
 
 			case 'talkback_on':
@@ -303,6 +367,15 @@ class ModuleInstance extends InstanceBase {
 				default: 51321,
 				min: 1,
 				max: 65535,
+			},
+			{
+				type: 'number',
+				id: 'midiChannel',
+				label: 'MIDI Channel for dLive System (N)',
+				width: 6,
+				default: 0,
+				min: 0,
+				max: 15,
 			},
 		]
 	}
@@ -400,12 +473,14 @@ class ModuleInstance extends InstanceBase {
 			host: '192.168.1.70',
 			model: 'dLive',
 			midiPort: 51328,
-			tcpPort: 51321
+			tcpPort: 51321,
+			midiChannel: 0
 		}
 
 		// Ensure port defaults are set even if config exists
 		if (!this.config.midiPort) this.config.midiPort = 51328
 		if (!this.config.tcpPort) this.config.tcpPort = 51321
+		if (this.config.midiChannel === undefined) this.config.midiChannel = 0
 
 		this.updateActions()
 		this.init_tcp()

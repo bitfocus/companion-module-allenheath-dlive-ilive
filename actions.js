@@ -200,6 +200,20 @@ module.exports = {
 					this.sendAction('mute_dca', action.options)
 				},
 			}
+			actions['mute_ufx_send'] = {
+				name: 'Mute UFX Stereo Send',
+				options: this.muteOptions('UFX Stereo Send', 8, 0x55),
+				callback: async (action) => {
+					this.sendAction('mute_ufx_send', action.options)
+				},
+			}
+			actions['mute_ufx_return'] = {
+				name: 'Mute UFX Stereo Return',
+				options: this.muteOptions('UFX Stereo Return', 8, 0x5d),
+				callback: async (action) => {
+					this.sendAction('mute_ufx_return', action.options)
+				},
+			}
 			actions['fader_input'] = {
 				name: 'Set Input Fader to Level',
 				options: this.faderOptions('Channel', 128, -1),
@@ -275,6 +289,20 @@ module.exports = {
 				options: this.faderOptions('DCA', 24, 0x35),
 				callback: async (action) => {
 					this.sendAction('fader_DCA', action.options)
+				},
+			}
+			actions['fader_ufx_send'] = {
+				name: 'Set UFX Stereo Send Fader to Level',
+				options: this.faderOptions('UFX Stereo Send', 8, 0x55),
+				callback: async (action) => {
+					this.sendAction('fader_ufx_send', action.options)
+				},
+			}
+			actions['fader_ufx_return'] = {
+				name: 'Set UFX Stereo Return Fader to Level',
+				options: this.faderOptions('UFX Stereo Return', 8, 0x5d),
+				callback: async (action) => {
+					this.sendAction('fader_ufx_return', action.options)
 				},
 			}
 		} else {
@@ -711,6 +739,186 @@ module.exports = {
 				options: this.sendLevelOptions('Stereo Matrix', 31, 0x3f),
 				callback: async (action) => {
 					this.sendAction('send_matrix_stereo', action.options)
+				},
+			}
+
+			// UFX Send Level Controls
+			actions['send_ufx'] = {
+				name: 'Set UFX Stereo Send Level',
+				options: this.sendLevelOptions('UFX Stereo Send', 8, 0x55),
+				callback: async (action) => {
+					this.sendAction('send_ufx', action.options)
+				},
+			}
+
+			// UFX Global Key Control
+			this.CHOICES_UFX_KEY = [
+				{ label: 'C', id: 0x00 },
+				{ label: 'C#', id: 0x01 },
+				{ label: 'D', id: 0x02 },
+				{ label: 'D#', id: 0x03 },
+				{ label: 'E', id: 0x04 },
+				{ label: 'F', id: 0x05 },
+				{ label: 'F#', id: 0x06 },
+				{ label: 'G', id: 0x07 },
+				{ label: 'G#', id: 0x08 },
+				{ label: 'A', id: 0x09 },
+				{ label: 'A#', id: 0x0a },
+				{ label: 'B', id: 0x0b },
+			]
+
+			actions['ufx_global_key'] = {
+				name: 'Set UFX Global Key',
+				options: [
+					{
+						type: 'dropdown',
+						label: 'Key',
+						id: 'key',
+						default: 0x00,
+						choices: this.CHOICES_UFX_KEY,
+					},
+				],
+				callback: async (action) => {
+					this.sendAction('ufx_global_key', action.options)
+				},
+			}
+
+			// UFX Global Scale Control
+			this.CHOICES_UFX_SCALE = [
+				{ label: 'Major', id: 0x00 },
+				{ label: 'Minor', id: 0x01 },
+			]
+
+			actions['ufx_global_scale'] = {
+				name: 'Set UFX Global Scale',
+				options: [
+					{
+						type: 'dropdown',
+						label: 'Scale',
+						id: 'scale',
+						default: 0x00,
+						choices: this.CHOICES_UFX_SCALE,
+					},
+				],
+				callback: async (action) => {
+					this.sendAction('ufx_global_scale', action.options)
+				},
+			}
+
+			// UFX Unit Parameter Control
+			actions['ufx_unit_parameter'] = {
+				name: 'Set UFX Unit Parameter',
+				options: [
+					{
+						type: 'number',
+						label: 'UFX MIDI Channel (M)',
+						id: 'midiChannel',
+						default: 1,
+						min: 1,
+						max: 16,
+					},
+					{
+						type: 'number',
+						label: 'Control Number (nn)',
+						id: 'controlNumber',
+						default: 1,
+						min: 0,
+						max: 127,
+					},
+					{
+						type: 'number',
+						label: 'Value (vv)',
+						id: 'value',
+						default: 0,
+						min: 0,
+						max: 127,
+					},
+				],
+				callback: async (action) => {
+					this.sendAction('ufx_unit_parameter', action.options)
+				},
+			}
+
+			// UFX Unit Key Parameter (with CC value scaling)
+			actions['ufx_unit_key'] = {
+				name: 'Set UFX Unit Key Parameter',
+				options: [
+					{
+						type: 'number',
+						label: 'UFX MIDI Channel (M)',
+						id: 'midiChannel',
+						default: 1,
+						min: 1,
+						max: 16,
+					},
+					{
+						type: 'number',
+						label: 'Control Number (nn)',
+						id: 'controlNumber',
+						default: 1,
+						min: 0,
+						max: 127,
+					},
+					{
+						type: 'dropdown',
+						label: 'Key',
+						id: 'key',
+						default: 'C',
+						choices: [
+							{ label: 'C', id: 'C' },
+							{ label: 'C#', id: 'C#' },
+							{ label: 'D', id: 'D' },
+							{ label: 'D#', id: 'D#' },
+							{ label: 'E', id: 'E' },
+							{ label: 'F', id: 'F' },
+							{ label: 'F#', id: 'F#' },
+							{ label: 'G', id: 'G' },
+							{ label: 'G#', id: 'G#' },
+							{ label: 'A', id: 'A' },
+							{ label: 'A#', id: 'A#' },
+							{ label: 'B', id: 'B' },
+						],
+					},
+				],
+				callback: async (action) => {
+					this.sendAction('ufx_unit_key', action.options)
+				},
+			}
+
+			// UFX Unit Scale Parameter (with CC value scaling)
+			actions['ufx_unit_scale'] = {
+				name: 'Set UFX Unit Scale Parameter',
+				options: [
+					{
+						type: 'number',
+						label: 'UFX MIDI Channel (M)',
+						id: 'midiChannel',
+						default: 1,
+						min: 1,
+						max: 16,
+					},
+					{
+						type: 'number',
+						label: 'Control Number (nn)',
+						id: 'controlNumber',
+						default: 1,
+						min: 0,
+						max: 127,
+					},
+					{
+						type: 'dropdown',
+						label: 'Scale',
+						id: 'scale',
+						default: 'Major',
+						choices: [
+							{ label: 'Major', id: 'Major' },
+							{ label: 'Minor', id: 'Minor' },
+							{ label: 'Chromatic', id: 'Chromatic' },
+						],
+					},
+				],
+				callback: async (action) => {
+					this.sendAction('ufx_unit_scale', action.options)
 				},
 			}
 
