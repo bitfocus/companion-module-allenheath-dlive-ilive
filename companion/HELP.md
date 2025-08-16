@@ -151,7 +151,7 @@ All fader controls use a precise dB scale:
 
 ## Version History
 
-- **v2.0.2**: Added UFX card support for dLive systems
+- **v2.0.3**: Added UFX card support for dLive systems
   - UFX stereo send/return mute and level controls
   - UFX global key and scale controls
   - UFX unit parameter controls with CC value scaling
