@@ -408,7 +408,8 @@ class ModuleInstance extends InstanceBase {
 	 * @access public
 	 * @since 1.2.0
 	 */
-	async init() {
+	async init(config) {
+		this.config = config;
 		// Initialize with current config or empty object if not set yet
 		await this.configUpdated(this.config || {})
 	}
