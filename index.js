@@ -183,7 +183,7 @@ class ModuleInstance extends InstanceBase {
 		let chOfs = 0
 		let strip = parseInt(opt.strip)
 		let cmd = { port: this.config.midiPort, buffers: [] }
-
+    this.log("info", "action: " + actionId)
 		switch (
 			actionId // Note that only available actions for the type (TCP or MIDI) will be processed
 		) {
@@ -315,22 +315,22 @@ class ModuleInstance extends InstanceBase {
 			case 'send_mix':
 			case 'send_fx':
 			case 'send_ufx':
+				// TODO: probably for iLive this needs another command? 
+
 				// SysEx messages for send levels
 				let inputCh = parseInt(opt.inputChannel)
 				let sendCh = parseInt(opt.send)
 				let sendLevel = parseInt(opt.level)
-				let sendType = 0x01 // Default for aux sends
+				let sendType = 0x02 // Default for aux sends
 				
-				if (actionId.includes('fx') && !actionId.includes('ufx')) {
-					sendType = 0x02 // FX sends
-				} else if (actionId.includes('matrix')) {
+				if (actionId.includes('matrix')) {
 					sendType = 0x03 // Matrix sends
-				} else if (actionId.includes('ufx')) {
-					sendType = 0x04 // UFX sends
+				} else if (actionId.includes('fx')) {
+					sendType = 0x04 // FX and UFX sends
 				}
 				
 				cmd.buffers = [
-					Buffer.from([0xf0, 0, 0, 0x1a, 0x50, 0x10, 0x01, 0, 0, sendType, inputCh, sendCh, sendLevel, 0xf7]),
+					Buffer.from([...sysExHeader, 0, 0x0D, inputCh, sendType, sendCh, sendLevel, 0xf7]),
 				]
 				break
 
@@ -594,7 +594,8 @@ class ModuleInstance extends InstanceBase {
 	 * @access public
 	 * @since 1.2.0
 	 */
-	async init() {
+	async init(config) {
+		this.config = config;
 		// Initialize with current config or empty object if not set yet
 		await this.configUpdated(this.config || {})
 	}
