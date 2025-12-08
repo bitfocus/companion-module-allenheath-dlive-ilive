@@ -8,9 +8,17 @@
 const { InstanceBase, Regex, runEntrypoint, TCPHelper } = require('@companion-module/base')
 const actions = require('./actions')
 const upgradeScripts = require('./upgrade')
+const MidiParser = require('./midi')
+const { FadingWorker } = require('./fades')
 
 const sysExHeader = [0xF0, 0, 0, 0x1a, 0x50, 0x10, 1, 0];
 
+let mixes = {
+	group: {n: 1, stereoOffset: 0x40},
+	aux: {n: 2, stereoOffset: 0x40},
+	fx: {n: 4, stereoOffset: 0x10},
+	matrix: {n: 3, stereoOffset: 0x40}
+}
 
 /**
  * @extends InstanceBase
@@ -30,6 +38,8 @@ class ModuleInstance extends InstanceBase {
 		Object.assign(this, {
 			...actions,
 		})
+
+		this.fadingWorker = new FadingWorker(this)
 	}
 
 	/**
@@ -53,6 +63,110 @@ class ModuleInstance extends InstanceBase {
 		}
 
 		return routingCmds
+	}
+
+
+	sendActionWithFade(actionId, opt) {
+		let path;
+		let inputCh = parseInt(opt.strip)
+		switch(actionId) {
+			case 'fader_input':
+			case 'fader_mix':
+				path = `0/${inputCh}/faderLevel`
+				break
+
+			case 'fader_mono_group':
+			case 'fader_stereo_group':
+				path = `1/${inputCh}/faderLevel`
+				break
+
+			case 'fader_mono_aux':
+			case 'fader_stereo_aux':
+				path = `2/${inputCh}/faderLevel`
+				break
+
+			case 'fader_mono_matrix':
+			case 'fader_stereo_matrix':
+				path = `3/${inputCh}/faderLevel`
+				break
+
+			case 'fader_DCA':
+			case 'fader_mono_fx_send':
+			case 'fader_stereo_fx_send':
+			case 'fader_fx_return':
+			case 'fader_ufx_send':
+			case 'fader_ufx_return':
+				let n = this.config.model == 'dLive' ? 4 : 0
+				path = `${n}/${inputCh}/faderLevel`
+				break
+			case 'send_aux_mono':
+			case 'send_aux_stereo':
+			case 'send_fx_mono':
+			case 'send_fx_stereo':
+			case 'send_matrix_mono':
+			case 'send_matrix_stereo':
+			case 'send_mix':
+			case 'send_fx':
+			case 'send_ufx':
+				inputCh = parseInt(opt.inputChannel)
+				let sendCh = parseInt(opt.send)
+				
+				let sendN = 0x02 // Default for aux sends
+				
+				if (actionId.includes('matrix')) {
+					sendN = 0x03 // Matrix sends
+				} else if (actionId.includes('fx')) {
+					sendN = 0x04 // FX and UFX sends
+				}
+				path = `0/${inputCh}/sendLevels/${sendN}/${sendCh}`
+				break;
+		}
+		let target = parseInt(opt.level)
+
+		let current = this.state.get(path) || 0
+		this.state.set(path, target)
+		this.fadingWorker.run(
+				path,
+				current,
+				target,
+				parseInt(opt.fadeDuration),
+				opt.fadeAlgorithm,
+				opt.fadeType,
+				true,
+		)
+	}
+
+	sendValueByPath(path, value) {
+		const parts = path.split("/")
+		const [n, channel, type] = parts
+		let cmd = { port: this.config.midiPort, buffers: [] }
+		switch (type) {
+			case "sendLevels":
+				const sendN = parts[3]
+				const sendChannel = parts[4]
+				cmd.buffers.push(Buffer.from([...sysExHeader, parseInt(n), 0x0D, parseInt(channel), sendN, sendChannel, value, 0xf7]))
+				break;
+			case "faderLevel":
+				cmd.buffers.push(
+					Buffer.from([0xb0 + parseInt(n), 0x63, parseInt(channel), 0x62, 0x17, 0x06, value])
+				)
+				break;
+			
+		}
+
+		for (let i = 0; i < cmd.buffers.length; i++) {
+			if (cmd.port === this.config.midiPort && this.midiSocket !== undefined) {
+				this.log('debug', `sending ${type} ${cmd.buffers[i].toString('hex')} via MIDI @${this.config.host}:${this.config.midiPort}`)
+				this.midiSocket.send(cmd.buffers[i]).catch((e) => {
+					this.log('error', `MIDI send error: ${e.message}`)
+				})
+			} else if (this.tcpSocket !== undefined) {
+				this.log('debug', `sending ${cmd.buffers[i].toString('hex')} via TCP @${this.config.host}:${this.config.tcpPort}`)
+				this.tcpSocket.send(cmd.buffers[i]).catch((e) => {
+					this.log('error', `TCP send error: ${e.message}`)
+				})
+			}
+		}
 	}
 
 	/**
@@ -375,10 +489,82 @@ class ModuleInstance extends InstanceBase {
 				type: 'number',
 				id: 'midiChannel',
 				label: 'MIDI Channel for dLive System (N)',
-				width: 6,
+				width: 12,
 				default: 0,
 				min: 0,
 				max: 15,
+			},
+			{
+				type: 'number',
+				id: 'monoGroup',
+				label: 'Number of Mono Groups',
+				width: 6,
+				default: 0,
+				min: 0,
+				max: 64,
+			},
+			{
+				type: 'number',
+				id: 'stereoGroup',
+				label: 'Number of Stereo Groups',
+				width: 6,
+				default: 0,
+				min: 0,
+				max: 64,
+			},
+			{
+				type: 'number',
+				id: 'monoFx',
+				label: 'Number of Mono FX',
+				width: 6,
+				default: 0,
+				min: 0,
+				max: 64,
+			},
+			{
+				type: 'number',
+				id: 'stereoFx',
+				label: 'Number of Stereo FX',
+				width: 6,
+				default: 0,
+				min: 0,
+				max: 64,
+			},
+			{
+				type: 'number',
+				id: 'monoAux',
+				label: 'Number of Mono AUX',
+				width: 6,
+				default: 0,
+				min: 0,
+				max: 64,
+			},
+			{
+				type: 'number',
+				id: 'stereoAux',
+				label: 'Number of Stereo AUX',
+				width: 6,
+				default: 0,
+				min: 0,
+				max: 64,
+			},
+			{
+				type: 'number',
+				id: 'monoMatrix',
+				label: 'Number of Mono Matrices',
+				width: 6,
+				default: 0,
+				min: 0,
+				max: 64,
+			},
+			{
+				type: 'number',
+				id: 'stereoMatrix',
+				label: 'Number of Stereo Matrices',
+				width: 6,
+				default: 0,
+				min: 0,
+				max: 64,
 			},
 		]
 	}
@@ -414,6 +600,45 @@ class ModuleInstance extends InstanceBase {
 		await this.configUpdated(this.config || {})
 	}
 
+	parseMidiMessage(message) {
+		if (message.type === 0xF0) {
+			let command = message.raw[9];
+			let n = message.raw[8];
+			let channel = message.raw[10];
+			
+			// Send levels
+			if (command === 0x0D) {
+				let sendN = message.raw[11];
+				let sendChannel = message.raw[12];
+				let level = message.raw[13];
+
+				this.log("debug", `Received send level ${n} ${channel} ${sendN} ${sendChannel} ${level}`)
+				this.state.set(`${n}/${channel}/sendLevels/${sendN}/${sendChannel}`, level)
+			}
+		} else if (message.type === 0xB0) {
+			// NPRN message: typically three messages in a row to change a channel parameter
+			// 1. Select the channel
+			// 2. Select the paramter
+			// 3. Set the parameter value
+			// 
+			if (message.controller === 0x63) {
+				this.currentMidiChannel = {
+					n: message.channel,
+					channel: message.value
+				}
+			} else if (message.controller === 0x62) {
+				this.currentMidiParameter = message.value
+			} else if (message.controller === 0x06) {
+				if (this.currentMidiChannel && this.currentMidiParameter) {
+					if (this.currentMidiParameter === 0x17) {
+						this.log("debug", `Received fader level ${this.currentMidiChannel.n}/${this.currentMidiChannel.channel}/faderLevel`)
+						this.state.set(`${this.currentMidiChannel.n}/${this.currentMidiChannel.channel}/faderLevel`, message.value)
+					}
+				}
+			}
+		}
+	}
+
 	/**
 	 * INTERNAL: use setup data to initalize the tcp socket object.
 	 *
@@ -421,6 +646,7 @@ class ModuleInstance extends InstanceBase {
 	 * @since 2.0.0
 	 */
 	init_tcp() {
+		this.state = new Map();
 		if (this.tcpSocket !== undefined) {
 			this.tcpSocket.destroy()
 			delete this.tcpSocket
@@ -444,6 +670,14 @@ class ModuleInstance extends InstanceBase {
 
 			this.midiSocket.on('connect', () => {
 				this.log('debug', `MIDI Connected to ${this.config.host}`)
+				this.requestMidiValues()
+			})
+			this.midiParser = new MidiParser();
+			this.midiSocket.on('data', (e) => {
+				this.midiParser.processData(e)
+			})
+			this.midiParser.addListener("message", (message) => {
+				this.parseMidiMessage(message)
 			})
 
 			if (this.config.model == 'dLive') {
@@ -460,6 +694,39 @@ class ModuleInstance extends InstanceBase {
 				this.tcpSocket.on('connect', () => {
 					this.log('debug', `TCP Connected to ${this.config.host}`)
 				})
+			}
+		}
+	}
+
+	async requestMidiValues() {
+		if (this.config.model === "dLive") {
+			// Request fader and send level of all input channels
+			for (let i = 0; i < 128; i++) {
+				this.midiSocket.send(Buffer.from([...sysExHeader, 0, 5, 0x0b, 0x17, i, 0xF7]))
+				for (const mix of Object.keys(mixes)) {
+					let mixConfig = mixes[mix]
+					 for (const layout of ['mono', 'stereo']) {
+					 	let numberOfMixes = this.config[layout + mix[0].toUpperCase() + mix.slice(1)] || 0
+					 	let offset = layout === 'stereo' ? mixConfig.stereoOffset : 0
+
+					 	for (let sendChannel = 1; sendChannel <= numberOfMixes; sendChannel++) {
+					 		this.midiSocket.send(Buffer.from([...sysExHeader, 0, 5, 0x0F, 0x0D, i, mixConfig.n, offset + sendChannel - 1, 0xF7]))
+					 	}
+					 }
+				}
+				await new Promise((resolve) => setTimeout(resolve, 100))
+			}
+
+			for (const mix of Object.keys(mixes)) {
+				let mixConfig = mixes[mix]
+					for (const layout of ['mono', 'stereo']) {
+					let numberOfMixes = this.config[layout + mix[0].toUpperCase() + mix.slice(1)] || 0
+					let offset = layout === 'stereo' ? mixConfig.stereoOffset : 0
+
+					for (let sendChannel = 1; sendChannel <= numberOfMixes; sendChannel++) {
+						this.midiSocket.send(Buffer.from([...sysExHeader, mixConfig.n, 5, 0x0b, 0x17, offset + sendChannel - 1, 0xF7]))
+					}
+				}
 			}
 		}
 	}
