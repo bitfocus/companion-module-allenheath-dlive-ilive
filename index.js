@@ -5,6 +5,12 @@
  *
  */
 
+let tcp = require('../../tcp')
+let instance_skel = require('../../instance_skel')
+let actions = require('./actions')
+let upgradeScripts = require('./upgrade')
+const MIDI = 51328 //The new version of firmware change the port of midi connections.
+const TCP = 51321
 const { InstanceBase, Regex, runEntrypoint, TCPHelper } = require('@companion-module/base')
 const actions = require('./actions')
 const upgradeScripts = require('./upgrade')
