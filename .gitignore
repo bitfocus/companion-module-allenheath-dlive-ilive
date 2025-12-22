@@ -1,2 +1,5 @@
 dLive-iLive (GitHub).code-workspace
 .DS_Store
+/pkg
+/pkg.tgz
+node_modules

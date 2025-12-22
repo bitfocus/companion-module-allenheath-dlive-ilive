@@ -1,33 +1,20 @@
 {
 	"name": "allenheath-dlive-ilive",
-	"legacy": [
-		"allenheath-dlive"
-	],
-	"version": "1.3.8",
-	"api_version": "1.0.0",
-	"keywords": [
-		"Audio",
-		"Sound"
-	],
-	"manufacturer": "Allen & Heath",
-	"product": [
-		"dLive",
-		"ilive"
-	],
-	"shortname": "dLive-ilive",
-	"description": "Allen & Heath dLive & iLive module for Companion",
+	"version": "2.0.3",
 	"main": "index.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
-	"author": "Andrew Broughton <andy@checkcheckonetwo.com>",
 	"license": "MIT",
-	"homepage": "https://github.com/bitfocus/companion-module-allenheath-dlive-ilive#readme",
-	"bugs": {
-		"url": "https://github.com/bitfocus/companion-module-allenheath-dlive-ilive/issues"
-	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/bitfocus/companion-module-allenheath-dlive-ilive.git"
+	},
+	"packageManager": "yarn@4.9.2+sha512.1fc009bc09d13cfd0e19efa44cbfc2b9cf6ca61482725eb35bbc5e257e093ebf4130db6dfe15d604ff4b79efd8e1e8e99b25fa7d0a6197c9f9826358d4d65c3c",
+	"dependencies": {
+		"@companion-module/base": "^1.4.0"
+	},
+	"devDependencies": {
+		"@companion-module/tools": "^2.3.0"
 	}
 }
