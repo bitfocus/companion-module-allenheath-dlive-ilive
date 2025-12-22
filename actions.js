@@ -1,4 +1,5 @@
 const { combineRgb } = require('@companion-module/base')
+const { FadeDurationChoice } = require('./fades')
 
 module.exports = {
 	/**
@@ -111,6 +112,7 @@ module.exports = {
 					choices: this.CHOICES_FADER,
 					minChoicesForSearch: 0,
 				},
+				...FadeDurationChoice()
 			]
 		}
 
@@ -218,14 +220,14 @@ module.exports = {
 				name: 'Set Input Fader to Level',
 				options: this.faderOptions('Channel', 128, -1),
 				callback: async (action) => {
-					this.sendAction('fader_input', action.options)
+					this.sendActionWithFade('fader_input', action.options)
 				},
 			}
 			actions['fader_mono_group'] = {
 				name: 'Set Mono Group Master Fader to Level',
 				options: this.faderOptions('Mono Group', 62, -1),
 				callback: async (action) => {
-					this.sendAction('fader_mono_group', action.options)
+					this.sendActionWithFade('fader_mono_group', action.options)
 				},
 			}
 			actions['fader_stereo_group'] = {
@@ -689,6 +691,7 @@ module.exports = {
 					choices: this.CHOICES_FADER,
 					minChoicesForSearch: 0,
 				},
+				...FadeDurationChoice()
 			]
 		}
 
@@ -698,7 +701,7 @@ module.exports = {
 				name: 'Set Aux Mono Send Level',
 				options: this.sendLevelOptions('Mono Aux', 62, -1),
 				callback: async (action) => {
-					this.sendAction('send_aux_mono', action.options)
+					this.sendActionWithFade('send_aux_mono', action.options)
 				},
 			}
 
@@ -706,7 +709,7 @@ module.exports = {
 				name: 'Set Aux Stereo Send Level',
 				options: this.sendLevelOptions('Stereo Aux', 31, 0x3f),
 				callback: async (action) => {
-					this.sendAction('send_aux_stereo', action.options)
+					this.sendActionWithFade('send_aux_stereo', action.options)
 				},
 			}
 
@@ -714,7 +717,7 @@ module.exports = {
 				name: 'Set FX Mono Send Level',
 				options: this.sendLevelOptions('Mono FX', 16, -1),
 				callback: async (action) => {
-					this.sendAction('send_fx_mono', action.options)
+					this.sendActionWithFade('send_fx_mono', action.options)
 				},
 			}
 
@@ -722,7 +725,7 @@ module.exports = {
 				name: 'Set FX Stereo Send Level',
 				options: this.sendLevelOptions('Stereo FX', 16, 0x0f),
 				callback: async (action) => {
-					this.sendAction('send_fx_stereo', action.options)
+					this.sendActionWithFade('send_fx_stereo', action.options)
 				},
 			}
 
@@ -730,7 +733,7 @@ module.exports = {
 				name: 'Set Matrix Mono Send Level',
 				options: this.sendLevelOptions('Mono Matrix', 62, -1),
 				callback: async (action) => {
-					this.sendAction('send_matrix_mono', action.options)
+					this.sendActionWithFade('send_matrix_mono', action.options)
 				},
 			}
 
@@ -738,7 +741,7 @@ module.exports = {
 				name: 'Set Matrix Stereo Send Level',
 				options: this.sendLevelOptions('Stereo Matrix', 31, 0x3f),
 				callback: async (action) => {
-					this.sendAction('send_matrix_stereo', action.options)
+					this.sendActionWithFade('send_matrix_stereo', action.options)
 				},
 			}
 
@@ -747,7 +750,7 @@ module.exports = {
 				name: 'Set UFX Stereo Send Level',
 				options: this.sendLevelOptions('UFX Stereo Send', 8, 0x55),
 				callback: async (action) => {
-					this.sendAction('send_ufx', action.options)
+					this.sendActionWithFade('send_ufx', action.options)
 				},
 			}
 
