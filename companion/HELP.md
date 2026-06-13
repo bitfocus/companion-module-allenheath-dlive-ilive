@@ -12,12 +12,47 @@ This module provides comprehensive control for Allen & Heath dLive and iLive dig
 1. **IP Address**: Enter the IP address of your dLive Surface or MixRack
 2. **Console Type**: Select either "dLive" or "iLive" to enable appropriate features
 3. **Network Ports**: 
-   - **MIDI Port**: Configurable (default: 51328) - Used for basic mixer commands
-   - **TCP Port**: Configurable (default: 51321) - Used for dLive advanced features only
+   - **MIDI Port**: Configurable (default: 51325) - Used for basic mixer commands
+   - **TCP Port**: Configurable (default: 51321) - Used for dLive advanced features and iLive AHNet sessions
+   - **iLive AHNet Console UDP Port**: Configurable (default: 51324) - Used only when iLive AHNet meters are enabled
+   - **iLive AHNet Local UDP Port**: Configurable (default: 51326) - Local port Companion uses to receive AHNet meter packets
 4. **MIDI Channel Configuration**:
    - **MIDI Channel for dLive System (N)**: Base MIDI channel for dLive system control (default: 0)
    - **Note**: dLive uses 5 consecutive MIDI channels (N through N+4) for different control types
 5. **Port Configuration**: Both MIDI and TCP ports can be customized in the module configuration
+
+## iLive AHNet Meters
+
+iLive can optionally subscribe to AHNet meter data in addition to the normal MIDI-over-TCP control connection.
+
+Enable **iLive AHNet meters** in the module config to add meter variables and the **iLive AHNet Meter** feedback.
+
+AHNet may also be usable on dLive systems, but dLive AHNet meter support has not been tested.
+
+iLive AHNet meter support includes:
+
+- Input Post PreAmp/Trim level
+- Input Post Gate/PEQ level
+- Input Post Compressor level
+- Input Post Limiter/De-Ess level
+- Input Post Delay level
+- Input Gate gain reduction
+- Input Compressor gain reduction
+- Input Limiter gain reduction
+- Aux 1-6 output meters, indexed from the configured iLive mix layout
+- Main Left and Main Right output meters, indexed from the configured iLive mix layout
+- Input channel names for AHNet-enabled input meter and fader presets
+- Automatic mix configuration detection for groups, FX sends, auxes, matrices, and main output
+
+The iLive meter mapping is based on live iLive testing plus constants extracted from iLive Editor 1.95.
+
+Meter variables include an approximate dB value and a raw AHNet value.
+
+Raw values are provided for advanced troubleshooting.
+
+The `ilive_mix_config` variable reports the detected mix engine layout when AHNet answers the channel name manager lookups.
+
+iLive AHNet detects the iLive mix layout automatically, so the dLive manual mix-count fields are not needed for normal iLive setup.
 
 ## Available Actions
 
@@ -151,6 +186,13 @@ All fader controls use a precise dB scale:
 
 ## Version History
 
+- **v2.0.4**: Added tested iLive AHNet meter support and setup polish
+  - Live iLive input, output, and gain-reduction meters
+  - iLive channel names and colours for meter/fader presets
+  - Automatic iLive mix-layout detection for output meter indexing
+  - Clearer TCP/AHNet port labels and config tooltips
+  - iLive AHNet detection stays internal instead of overwriting manual dLive mix-count fields
+  - dLive AHNet may work but is untested
 - **v2.0.3**: Added UFX card support for dLive systems
   - UFX stereo send/return mute and level controls
   - UFX global key and scale controls
@@ -167,7 +209,8 @@ All fader controls use a precise dB scale:
 
 - **Companion**: Version 3.0+ (use v1.x for Companion 2.x)
 - **dLive Firmware**: V2.0+ recommended for full Protocol V2.0 features
-- **iLive Firmware**: Compatible with current firmware versions
+- **dLive AHNet**: May work, but AHNet meter support has not been tested on dLive
+- **iLive Firmware**: Version 1.94+ confirmed working
 
 ## Support
 

@@ -111,6 +111,13 @@ module.exports = {
 					default: 0,
 					choices: this.CHOICES_FADER,
 					minChoicesForSearch: 0,
+					allowCustom: true,
+				},
+				{
+					type: 'checkbox',
+					label: 'Relative',
+					id: 'relative',
+					default: false,
 				},
 				...FadeDurationChoice()
 			]
@@ -234,77 +241,77 @@ module.exports = {
 				name: 'Set Stereo Group Master Fader to Level',
 				options: this.faderOptions('Stereo Group', 31, 0x3f),
 				callback: async (action) => {
-					this.sendAction('fader_stereo_group', action.options)
+					this.sendActionWithFade('fader_stereo_group', action.options)
 				},
 			}
 			actions['fader_mono_aux'] = {
 				name: 'Set Mono Aux Master Fader to Level',
 				options: this.faderOptions('Mono Aux', 62, -1),
 				callback: async (action) => {
-					this.sendAction('fader_mono_aux', action.options)
+					this.sendActionWithFade('fader_mono_aux', action.options)
 				},
 			}
 			actions['fader_stereo_aux'] = {
 				name: 'Set Stereo Aux Master Fader to Level',
 				options: this.faderOptions('Stereo Aux', 31, 0x3f),
 				callback: async (action) => {
-					this.sendAction('fader_stereo_aux', action.options)
+					this.sendActionWithFade('fader_stereo_aux', action.options)
 				},
 			}
 			actions['fader_mono_matrix'] = {
 				name: 'Set Mono Matrix Master Fader to Level',
 				options: this.faderOptions('Mono Matrix', 62, -1),
 				callback: async (action) => {
-					this.sendAction('fader_mono_matrix', action.options)
+					this.sendActionWithFade('fader_mono_matrix', action.options)
 				},
 			}
 			actions['fader_stereo_matrix'] = {
 				name: 'Set Stereo Matrix Master Fader to Level',
 				options: this.faderOptions('Stereo Matrix', 31, 0x3f),
 				callback: async (action) => {
-					this.sendAction('fader_stereo_matrix', action.options)
+					this.sendActionWithFade('fader_stereo_matrix', action.options)
 				},
 			}
 			actions['fader_mono_fx_send'] = {
 				name: 'Set Mono FX Send Master Fader to Level',
 				options: this.faderOptions('Mono FX Send', 16, -1),
 				callback: async (action) => {
-					this.sendAction('fader_mono_fx_send', action.options)
+					this.sendActionWithFade('fader_mono_fx_send', action.options)
 				},
 			}
 			actions['fader_stereo_fx_send'] = {
 				name: 'Set Stereo FX Send Master Fader to Level',
 				options: this.faderOptions('Stereo FX Send', 16, 0x0f),
 				callback: async (action) => {
-					this.sendAction('fader_stereo_fx_send', action.options)
+					this.sendActionWithFade('fader_stereo_fx_send', action.options)
 				},
 			}
 			actions['fader_fx_return'] = {
 				name: 'Set FX Return Fader to Level',
 				options: this.faderOptions('FX Return', 16, 0x1f),
 				callback: async (action) => {
-					this.sendAction('fader_fx_return', action.options)
+					this.sendActionWithFade('fader_fx_return', action.options)
 				},
 			}
 			actions['fader_DCA'] = {
 				name: 'Set DCA Fader to Level',
 				options: this.faderOptions('DCA', 24, 0x35),
 				callback: async (action) => {
-					this.sendAction('fader_DCA', action.options)
+					this.sendActionWithFade('fader_DCA', action.options)
 				},
 			}
 			actions['fader_ufx_send'] = {
 				name: 'Set UFX Stereo Send Fader to Level',
 				options: this.faderOptions('UFX Stereo Send', 8, 0x55),
 				callback: async (action) => {
-					this.sendAction('fader_ufx_send', action.options)
+					this.sendActionWithFade('fader_ufx_send', action.options)
 				},
 			}
 			actions['fader_ufx_return'] = {
 				name: 'Set UFX Stereo Return Fader to Level',
 				options: this.faderOptions('UFX Stereo Return', 8, 0x5d),
 				callback: async (action) => {
-					this.sendAction('fader_ufx_return', action.options)
+					this.sendActionWithFade('fader_ufx_return', action.options)
 				},
 			}
 		} else {
@@ -349,35 +356,35 @@ module.exports = {
 				name: 'Set Input Fader to Level',
 				options: this.faderOptions('Channel', 64, 0x1f),
 				callback: async (action) => {
-					this.sendAction('fader_input', action.options)
+					this.sendActionWithFade('fader_input', action.options)
 				},
 			}
 			actions['fader_mix'] = {
 				name: 'Set Mix Fader to Level',
 				options: this.faderOptions('Mix', 32, 0x5f),
 				callback: async (action) => {
-					this.sendAction('fader_mix', action.options)
+					this.sendActionWithFade('fader_mix', action.options)
 				},
 			}
 			actions['fader_mono_fx_send'] = {
 				name: 'Set FX Send Master Fader to Level',
 				options: this.faderOptions('FX Send', 8, -1),
 				callback: async (action) => {
-					this.sendAction('fader_mono_fx_send', action.options)
+					this.sendActionWithFade('fader_mono_fx_send', action.options)
 				},
 			}
 			actions['fader_fx_return'] = {
 				name: 'Set FX Return Fader to Level',
 				options: this.faderOptions('FX Return', 8, 0x07),
 				callback: async (action) => {
-					this.sendAction('fader_fx_return', action.options)
+					this.sendActionWithFade('fader_fx_return', action.options)
 				},
 			}
 			actions['fader_DCA'] = {
 				name: 'Set DCA Fader to Level',
 				options: this.faderOptions('DCA', 16, 0x0f),
 				callback: async (action) => {
-					this.sendAction('fader_DCA', action.options)
+					this.sendActionWithFade('fader_DCA', action.options)
 				},
 			}
 		}

@@ -102,6 +102,9 @@ class FadingWorker {
   }
 
   sendCommand(cmd, arg) {
+    if (typeof this.instance.setStateValue === 'function') {
+      this.instance.setStateValue(cmd, arg)
+    }
     if (this.instance.config.host) {
       this.instance.sendValueByPath(cmd, arg, true)
     }

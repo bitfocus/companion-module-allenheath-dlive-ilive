@@ -199,6 +199,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/pngjs@npm:^6.0.1":
+  version: 6.0.5
+  resolution: "@types/pngjs@npm:6.0.5"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10c0/11979d0690e774046d3a1e8cfc613a6b53a613909d81c93831cf253800e93ba1a2d47950979b523aebd4fc023351b644d7f4aa2dfcc027c70816a2968420e7da
+  languageName: node
+  linkType: hard
+
 "@webassemblyjs/ast@npm:1.14.1, @webassemblyjs/ast@npm:^1.14.1":
   version: 1.14.1
   resolution: "@webassemblyjs/ast@npm:1.14.1"
@@ -458,6 +467,7 @@ __metadata:
   dependencies:
     "@companion-module/base": "npm:^1.4.0"
     "@companion-module/tools": "npm:^2.6.1"
+    companion-module-utils: "npm:^0.5.0"
   languageName: unknown
   linkType: soft
 
@@ -556,6 +566,16 @@ __metadata:
   version: 2.20.3
   resolution: "commander@npm:2.20.3"
   checksum: 10c0/74c781a5248c2402a0a3e966a0a2bba3c054aad144f5c023364be83265e796b20565aa9feff624132ff629aa64e16999fa40a743c10c12f7c61e96a794b99288
+  languageName: node
+  linkType: hard
+
+"companion-module-utils@npm:^0.5.0":
+  version: 0.5.0
+  resolution: "companion-module-utils@npm:0.5.0"
+  dependencies:
+    "@types/pngjs": "npm:^6.0.1"
+    pngjs: "npm:^7.0.0"
+  checksum: 10c0/ad8ec64ba33823fc5cbb4fba0a815f1a3897c1e337dd4897c1c6bfef6c33fa0c193aeda09ac451afe369c1ce85ca5d7b2250c554d7ab516118790d153a2c57af
   languageName: node
   linkType: hard
 
@@ -1187,6 +1207,13 @@ __metadata:
   dependencies:
     find-up: "npm:^4.0.0"
   checksum: 10c0/c56bda7769e04907a88423feb320babaed0711af8c436ce3e56763ab1021ba107c7b0cafb11cde7529f669cfc22bffcaebffb573645cbd63842ea9fb17cd7728
+  languageName: node
+  linkType: hard
+
+"pngjs@npm:^7.0.0":
+  version: 7.0.0
+  resolution: "pngjs@npm:7.0.0"
+  checksum: 10c0/0d4c7a0fd476a9c33df7d0a2a73e1d56537628a668841f6995c2bca070cf30819f9254a64363266bc14ef2fee47659dd3b4f2b18eec7ab65143015139f497b38
   languageName: node
   linkType: hard
 
