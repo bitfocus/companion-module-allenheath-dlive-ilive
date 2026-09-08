@@ -10,6 +10,7 @@ const actions = require('./actions')
 const upgradeScripts = require('./upgrade')
 const MidiParser = require('./midi')
 const { FadingWorker } = require('./fades')
+const { buildTalkbackCommand } = require('./protocol')
 
 const sysExHeader = [0xF0, 0, 0, 0x1a, 0x50, 0x10, 1, 0];
 
@@ -394,7 +395,7 @@ class ModuleInstance extends InstanceBase {
 			case 'talkback_on':
 				cmd = {
 					port: this.config.tcpPort,
-					buffers: [Buffer.from([0xf0, 0, 2, 0, 0x4b, 0, 0x4a, 0x10, 0xe7, 0, 1, opt.on ? 1 : 0, 0xf7])],
+					buffers: [buildTalkbackCommand(opt.on)],
 				}
 				break
 
